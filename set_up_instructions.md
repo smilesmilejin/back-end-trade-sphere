@@ -71,26 +71,28 @@ Connetion URI
 
 Put the following to config/db.js
 ```js
-import pg from 'pg'
+require('dotenv').config()
+// console.log(process.env)  # this is to test if dotenv is working
+
+// import pg from 'pg'
+const pg = require('pg');
 const { Pool, Client } = pg
-const connectionString = 'postgresql://dbuser:secretpassword@database.server.com:3211/mydb'
+
+// const connectionString = 'postgres://postgres:postgres@localhost:5432/node_pg'
+const connectionString = process.env.DATABASE_URL;
+console.log('connection string is: ', connectionString)
+
  
 const pool = new Pool({
   connectionString,
 })
  
-await pool.query('SELECT NOW()')
-await pool.end()
- 
+
 const client = new Client({
   connectionString,
 })
- 
-await client.connect()
- 
-await client.query('SELECT NOW()')
- 
-await client.end()
+
+module.exports = { pool, client };
 ```
 
 
@@ -137,4 +139,162 @@ console.log(process.env.DATABASE_URL)
 4. Run node db/index.js to see if DATABASE_URL is printed
 ```
 node db/index.js
+```
+
+# Install Migration Tools  - node-pg-migrate
+[node-pg-migrate](https://github.com/salsita/node-pg-migrate/blob/main/README.md)
+
+https://github.com/salsita/node-pg-migrate/blob/main/README.md
+
+Doc:
+https://salsita.github.io/node-pg-migrate/
+
+1. **Check if pg is installed**
+
+1.Check your package.json
+    Look inside the dependencies section. If you see "pg": "..." listed, it's installed.
+
+    Example snippet:
+    ```
+    "dependencies": {
+    "pg": "^8.16.3",
+    // other packages...
+    }
+    ``
+2. Use npm/yarn to check
+    Run this command in your project root terminal:
+    ```
+    npm list pg
+    ```
+    MacBook-Pro-7:node-pg xinshuangjin$ npm list pg
+    node-pg@0.0.0 /Users/xinshuangjin/Developer/capstone/node-pg
+    └─┬ pg@8.16.3
+    └─┬ pg-pool@3.10.1
+        └── pg@8.16.3 deduped
+
+2. **Installation**
+```
+npm add --save-dev node-pg-migrate
+```
+
+
+3. **Add to package.json**
+
+Add "migrate": "node-pg-migrate" to scripts section of your package.json so you are able to quickly run commands.
+```
+  "scripts": {
+    "start": "node ./bin/www",
+    "migrate": "node-pg-migrate"
+  },
+```
+
+Run
+```
+npm run migrate create my-first-migration
+```
+
+It will create file xxx_my-first-migration.js in migrations folder.
+
+
+Open it and change contents to:
+```js
+export const up = (pgm) => {
+  pgm.createTable('users', {
+    id: 'id',
+    name: { type: 'varchar(1000)', notNull: true },
+    createdAt: {
+      type: 'timestamp',
+      notNull: true,
+      default: pgm.func('current_timestamp'),
+    },
+  });
+  pgm.createTable('posts', {
+    id: 'id',
+    userId: {
+      type: 'integer',
+      notNull: true,
+      references: '"users"',
+      onDelete: 'CASCADE',
+    },
+    body: { type: 'text', notNull: true },
+    createdAt: {
+      type: 'timestamp',
+      notNull: true,
+      default: pgm.func('current_timestamp'),
+    },
+  });
+  pgm.createIndex('posts', 'userId');
+};
+```
+
+
+Now you should put your DB connection string to DATABASE_URL environment variable and run npm run migrate up.  
+```
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/node_pg npm run migrate up
+```
+
+``` npm run migrate up ```
+
+Response:
+
+```
+
+MacBook-Pro-7:back-end-trade-sphere xinshuangjin$ npm run migrate up
+
+> back-end-trade-sphere@0.0.0 migrate
+> node-pg-migrate up
+
+[dotenv@17.2.0] injecting env (1) from .env (tip: ⚙️  write to custom object with { processEnv: myObject })
+(node:33399) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/xinshuangjin/Developer/capstone/back-end-trade-sphere/migrations/1753128348632_my-first-migration.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/xinshuangjin/Developer/capstone/back-end-trade-sphere/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+> Migrating files:
+> - 1753128348632_my-first-migration
+### MIGRATION 1753128348632_my-first-migration (UP) ###
+CREATE TABLE "user_profile" (
+  "user_id" serial PRIMARY KEY,
+  "email" varchar(255) NOT NULL,
+  "name" varchar(255),
+  "address" text,
+  "created_at" timestamp DEFAULT current_timestamp NOT NULL,
+  "updated_at" timestamp DEFAULT current_timestamp NOT NULL
+);
+CREATE TABLE "listing" (
+  "listing_id" serial PRIMARY KEY,
+  "user_id" integer NOT NULL REFERENCES user_profile(user_id) ON DELETE CASCADE,
+  "name" varchar(255),
+  "category" varchar(100),
+  "description" text,
+  "price" numeric(12,2),
+  "location" varchar(255),
+  "contact_information" varchar(255),
+  "created_at" timestamp DEFAULT current_timestamp NOT NULL,
+  "updated_at" timestamp DEFAULT current_timestamp NOT NULL,
+  "sold_status" boolean DEFAULT false NOT NULL
+);
+CREATE TABLE "image" (
+  "image_id" serial PRIMARY KEY,
+  "listing_id" integer NOT NULL REFERENCES listing(listing_id) ON DELETE CASCADE,
+  "image_url" text NOT NULL
+);
+CREATE TABLE "user_favorite_listing" (
+  "user_id" integer NOT NULL REFERENCES user_profile(user_id) ON DELETE CASCADE,
+  "listing_id" integer NOT NULL REFERENCES listing(listing_id) ON DELETE CASCADE,
+  "created_at" timestamp DEFAULT current_timestamp NOT NULL,
+  CONSTRAINT "user_favorite_listing_pkey" PRIMARY KEY ("user_id", "listing_id")
+);
+INSERT INTO "public"."pgmigrations" (name, run_on) VALUES ('1753128348632_my-first-migration', NOW());
+
+
+Migrations complete!
+MacBook-Pro-7:back-end-trade-sphere xinshuangjin$ 
+```
+
+# Create PostgresSQL database locally to confirm two those two tables
+You should now have four tables in your DB: ```user_profile```, ```listing```, ```image```, ```user_favorite_listing```
+```bash
+$ psql -U postgres
+\c trade-sphere;
+\dt
 ```
