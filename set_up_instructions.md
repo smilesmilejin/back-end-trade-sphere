@@ -306,7 +306,7 @@ The following error occurs:
 ```
 MacBook-Pro-7:back-end-trade-sphere xinshuangjin$ node db/test-db.js
 [dotenv@17.2.0] injecting env (1) from .env (tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild)
-connection string is:  postgresql+psycopg2://trade_sphere_db_2sjj_user:iUCgjmtB1WE1gt3LvHXActaRcK2Zfi88@dpg-d1vap8re5dus739kmef0-a.oregon-postgres.render.com/trade_sphere_db_2sjj
+connection string is: XXX
 ❌ Pool error: SSL/TLS required
 ❌ Client error: SSL/TLS required
 MacBook-Pro-7:back-end-trade-sphere xinshuangjin$ 
@@ -335,8 +335,110 @@ Fixed the Problem:
 ```
 MacBook-Pro-7:back-end-trade-sphere xinshuangjin$ node db/test-db.js
 [dotenv@17.2.0] injecting env (1) from .env (tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] })
-connection string is:  postgresql+psycopg2://trade_sphere_db_2sjj_user:iUCgjmtB1WE1gt3LvHXActaRcK2Zfi88@dpg-d1vap8re5dus739kmef0-a.oregon-postgres.render.com/trade_sphere_db_2sjj
+connection string is:  xxx
 ✅ Pool connected: 2025-07-21T21:18:12.654Z
 ✅ Client connected: 2025-07-21T21:18:13.386Z
+MacBook-Pro-7:back-end-trade-sphere xinshuangjin$ 
+```
+
+# Error when runing 
+```
+npm run migrate up
+```
+
+MacBook-Pro-7:back-end-trade-sphere xinshuangjin$ npm run migrate up
+
+> back-end-trade-sphere@0.0.0 migrate
+> node-pg-migrate up
+
+[dotenv@17.2.0] injecting env (1) from .env (tip: ⚙️  enable debug logging with { debug: true })
+could not connect to postgres: error: SSL/TLS required
+    at Parser.parseErrorMessage (/Users/xinshuangjin/Developer/capstone/back-end-trade-sphere/node_modules/pg-protocol/dist/parser.js:285:98)
+    at Parser.handlePacket (/Users/xinshuangjin/Developer/capstone/back-end-trade-sphere/node_modules/pg-protocol/dist/parser.js:122:29)
+    at Parser.parse (/Users/xinshuangjin/Developer/capstone/back-end-trade-sphere/node_modules/pg-protocol/dist/parser.js:35:38)
+    at Socket.<anonymous> (/Users/xinshuangjin/Developer/capstone/back-end-trade-sphere/node_modules/pg-protocol/dist/index.js:11:42)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+  length: 37,
+  severity: 'FATAL',
+  code: '28000',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: undefined,
+  line: undefined,
+  routine: undefined
+}
+error: SSL/TLS required
+    at Parser.parseErrorMessage (/Users/xinshuangjin/Developer/capstone/back-end-trade-sphere/node_modules/pg-protocol/dist/parser.js:285:98)
+    at Parser.handlePacket (/Users/xinshuangjin/Developer/capstone/back-end-trade-sphere/node_modules/pg-protocol/dist/parser.js:122:29)
+    at Parser.parse (/Users/xinshuangjin/Developer/capstone/back-end-trade-sphere/node_modules/pg-protocol/dist/parser.js:35:38)
+    at Socket.<anonymous> (/Users/xinshuangjin/Developer/capstone/back-end-trade-sphere/node_modules/pg-protocol/dist/index.js:11:42)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+  length: 37,
+  severity: 'FATAL',
+  code: '28000',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: undefined,
+  line: undefined,
+  routine: undefined
+
+
+Solution: Add to the end of DATABASE_URL in .env file
+```
+?sslmode=require
+```
+
+The migration is successful:
+
+```
+postgres=# \c postgresql://trade_sphere_db_2sjj_user:iUCgjmtB1WE1gt3LvHXActaRcK2Zfi88@dpg-d1vap8re5dus739kmef0-a.oregon-postgres.render.com/trade_sphere_db_2sjj
+psql (14.17 (Homebrew), server 16.9 (Debian 16.9-1.pgdg120+1))
+WARNING: psql major version 14, server major version 16.
+         Some psql features might not work.
+SSL connection (protocol: TLSv1.3, cipher: TLS_AES_128_GCM_SHA256, bits: 128, compression: off)
+You are now connected to database "trade_sphere_db_2sjj" as user "trade_sphere_db_2sjj_user" on host "dpg-d1vap8re5dus739kmef0-a.oregon-postgres.render.com" (address "35.227.164.209") at port "5432".
+trade_sphere_db_2sjj=> \dt
+                         List of relations
+ Schema |         Name          | Type  |           Owner           
+--------+-----------------------+-------+---------------------------
+ public | image                 | table | trade_sphere_db_2sjj_user
+ public | listing               | table | trade_sphere_db_2sjj_user
+ public | pgmigrations          | table | trade_sphere_db_2sjj_user
+ public | user_favorite_listing | table | trade_sphere_db_2sjj_user
+ public | user_profile          | table | trade_sphere_db_2sjj_user
+(5 rows)
+
+trade_sphere_db_2sjj=> SELECT * FROM user_profile;
+ user_id | email | name | address | created_at | updated_at 
+---------+-------+------+---------+------------+------------
+(0 rows)
+
+trade_sphere_db_2sjj=> \q
 MacBook-Pro-7:back-end-trade-sphere xinshuangjin$ 
 ```
