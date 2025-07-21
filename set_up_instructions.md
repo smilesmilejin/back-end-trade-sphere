@@ -46,3 +46,37 @@ node-postgres is a collection of node.js modules for interfacing with your Postg
 ```
 $ npm install pg
 ```
+
+** 2. Create folder and file in root directory: db/index.js
+https://node-postgres.com/guides/project-structure
+
+# Install dotenv to load .env
+https://www.npmjs.com/package/dotenv
+
+1. Install dotenv
+```
+npm install dotenv
+```
+
+2. Create a .env file at your project root, add the following to .env file
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/<database_name>
+
+3. Add this to the top of db/index.js
+```
+require('dotenv').config();
+```
+
+4. Retrieve the following DATABASE_URL from .env
+```
+const connectionString = process.env.DATABASE_URL;
+``
+
+5. Try to print the environmental variables
+```
+console.log(process.env.DATABASE_URL)
+```
+
+4. Run node db/index.js to see if DATABASE_URL is printed
+```
+node db/index.js
+```
