@@ -298,3 +298,45 @@ $ psql -U postgres
 \c trade-sphere;
 \dt
 ```
+
+# Create a PostgreSQL database in Render.com
+
+The following error occurs:
+
+```
+MacBook-Pro-7:back-end-trade-sphere xinshuangjin$ node db/test-db.js
+[dotenv@17.2.0] injecting env (1) from .env (tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild)
+connection string is:  postgresql+psycopg2://trade_sphere_db_2sjj_user:iUCgjmtB1WE1gt3LvHXActaRcK2Zfi88@dpg-d1vap8re5dus739kmef0-a.oregon-postgres.render.com/trade_sphere_db_2sjj
+❌ Pool error: SSL/TLS required
+❌ Client error: SSL/TLS required
+MacBook-Pro-7:back-end-trade-sphere xinshuangjin$ 
+```
+
+Solution: Need to add SSL Options
+
+SSL (Secure Sockets Layer) options control whether the connection between your app and the PostgreSQL server is encrypted.
+
+
+Add SSL options in db/index.js:
+
+```js
+
+// Add SSL options
+const sslOptions = {
+  ssl: {
+    require: true,
+    rejectUnauthorized: false, // ⚠️ Accept Render's certs (safe for development)
+  },
+};
+
+```
+
+Fixed the Problem: 
+```
+MacBook-Pro-7:back-end-trade-sphere xinshuangjin$ node db/test-db.js
+[dotenv@17.2.0] injecting env (1) from .env (tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] })
+connection string is:  postgresql+psycopg2://trade_sphere_db_2sjj_user:iUCgjmtB1WE1gt3LvHXActaRcK2Zfi88@dpg-d1vap8re5dus739kmef0-a.oregon-postgres.render.com/trade_sphere_db_2sjj
+✅ Pool connected: 2025-07-21T21:18:12.654Z
+✅ Client connected: 2025-07-21T21:18:13.386Z
+MacBook-Pro-7:back-end-trade-sphere xinshuangjin$ 
+```
