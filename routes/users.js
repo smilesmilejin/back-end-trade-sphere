@@ -297,12 +297,86 @@ router.get('/:userId/listings', async (req, res) => {
   try {
     const user = await validateModelById('user_profile', useId);
 
-    const getUserListingsQuery = `SELECT * FROM listing WHERE user_id = $1;`;
-    const values = [useId]
+    // const getUserListingsQuery = `SELECT * FROM listing WHERE user_id = $1;`;
+    // const values = [useId]
 
-    const result = await pool.query(getUserListingsQuery, values)
+    // const result = await pool.query(getUserListingsQuery, values)
 
     // console.log(result)
+
+    // user LEFT JOIN: All listings for user 1 will be returned, regardless of whether they have images.
+    // const getUserListingsAndImagesQuery = `
+    //   SELECT
+    //     l.listing_id AS listing_id,
+    //     l.user_id,
+    //     l.name,
+    //     l.category,
+    //     l.description,
+    //     l.price,
+    //     l.location,
+    //     l.contact_information,
+    //     l.created_at,
+    //     l.updated_at,
+    //     l.sold_status,
+    //     i.image_id,
+    //     i.image_url
+    //   FROM listing l
+    //   LEFT JOIN image i ON l.listing_id = i.listing_id
+    //   WHERE l.user_id = $1;
+    // `;
+
+    // json_agg(i.*) AS images
+    //     l.listing_id is the primary key, so PostgreSQL guarantees all other l.* columns are functionally dependent on it.
+    // That's why it doesn’t require you to list every column in the GROUP BY clause — this is not standard SQL but PostgreSQL-specific.
+    const getUserListingsAndImagesQuery = `
+      SELECT 
+        l.*,
+        COALESCE(
+        json_agg(i.*) FILTER (WHERE i.image_id IS NOT NULL),
+        '[]'
+      ) AS images
+      FROM listing l
+      LEFT JOIN image i ON l.listing_id = i.listing_id
+      WHERE l.user_id = $1
+      GROUP BY l.listing_id;
+    `;
+
+//     Good Practice (optional but safer/future-proof):
+// If you ever migrate to another SQL system (e.g., MySQL or SQL Server), or want stricter SQL compliance, consider being explicit:
+    // const getUserListingsAndImagesQuery = `
+    // SELECT 
+    // l.listing_id,
+    // l.user_id,
+    // l.name,
+    // l.category,
+    // l.description,
+    // l.price,
+    // l.location,
+    // l.contact_information,
+    // l.created_at,
+    // l.updated_at,
+    // l.sold_status,
+    // COALESCE(json_agg(i.*) FILTER (WHERE i.image_id IS NOT NULL), '[]') AS images
+    // FROM listing l
+    // LEFT JOIN image i ON l.listing_id = i.listing_id
+    // WHERE l.user_id = $1
+    // GROUP BY 
+    //   l.listing_id,
+    //   l.user_id,
+    //   l.name,
+    //   l.category,
+    //   l.description,
+    //   l.price,
+    //   l.location,
+    //   l.contact_information,
+    //   l.created_at,
+    //   l.updated_at,
+    // l.sold_status;
+    // `;
+  
+    const values = [useId];
+
+    const result = await pool.query(getUserListingsAndImagesQuery, values)
 
     res.status(200).json(result.rows)
     
@@ -341,7 +415,7 @@ router.post('/:userId/listings', async(req, res) => {
 
     const result = await pool.query(insertQuery, values)
 
-    res.status(200).json(result.rows)
+    res.status(201).json(result.rows)
 
   } catch(err) {
   res.status(err.statusCode || 500).json({error: err.message})
