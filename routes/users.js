@@ -291,7 +291,7 @@ router.patch('/:userId', async (req, res) => {
 
 // GET users/<user_id>/listings
 router.get('/:userId/listings', async (req, res) => {
-  console.log(req);
+  // console.log(req);
 
   const useId = req.params.userId;
   try {
@@ -311,5 +311,42 @@ router.get('/:userId/listings', async (req, res) => {
   }
 
 });
+
+
+// POST users/<user_id>/listings
+router.post('/:userId/listings', async(req, res) => {
+  const userId = req.params.userId;
+
+  try {
+    const user = await validateModelById('user_profile', userId);
+
+    const requestBody = req.body
+
+    const insertQuery = `
+    INSERT INTO listing (user_id, name, category, description, price, location, contact_information, created_at, updated_at, sold_status)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $8)
+    RETURNING *
+    `
+
+    const values = [
+      userId,
+      requestBody.name || null, 
+      requestBody.category || null, 
+      requestBody.description || null,
+      requestBody.price || null,
+      requestBody.location || null,
+      requestBody.contact_information || null,
+      requestBody.sold_status || false,
+    ]
+
+    const result = await pool.query(insertQuery, values)
+
+    res.status(200).json(result.rows)
+
+  } catch(err) {
+  res.status(err.statusCode || 500).json({error: err.message})
+  }
+})
+
 
 module.exports = router;
