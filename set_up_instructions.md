@@ -238,14 +238,13 @@ DATABASE_URL=postgres://postgres:postgres@localhost:5432/node_pg npm run migrate
 Response:
 
 ```
-
 MacBook-Pro-7:back-end-trade-sphere xinshuangjin$ npm run migrate up
 
 > back-end-trade-sphere@0.0.0 migrate
 > node-pg-migrate up
 
-[dotenv@17.2.0] injecting env (1) from .env (tip: ⚙️  write to custom object with { processEnv: myObject })
-(node:33399) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/xinshuangjin/Developer/capstone/back-end-trade-sphere/migrations/1753128348632_my-first-migration.js is not specified and it doesn't parse as CommonJS.
+[dotenv@17.2.0] injecting env (1) from .env (tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit)
+(node:3327) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/xinshuangjin/Developer/capstone/back-end-trade-sphere/migrations/1753128348632_my-first-migration.js is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to /Users/xinshuangjin/Developer/capstone/back-end-trade-sphere/package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)
@@ -442,3 +441,4 @@ trade_sphere_db_2sjj=> SELECT * FROM user_profile;
 trade_sphere_db_2sjj=> \q
 MacBook-Pro-7:back-end-trade-sphere xinshuangjin$ 
 ```
+# Add routes/routes_utilities.js  
