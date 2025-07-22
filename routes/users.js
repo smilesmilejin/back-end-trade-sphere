@@ -289,6 +289,27 @@ router.patch('/:userId', async (req, res) => {
 });
 
 
+// GET users/<user_id>/listings
+router.get('/:userId/listings', async (req, res) => {
+  console.log(req);
 
+  const useId = req.params.userId;
+  try {
+    const user = await validateModelById('user_profile', useId);
+
+    const getUserListingsQuery = `SELECT * FROM listing WHERE user_id = $1;`;
+    const values = [useId]
+
+    const result = await pool.query(getUserListingsQuery, values)
+
+    // console.log(result)
+
+    res.status(200).json(result.rows)
+    
+  } catch(err) {
+    res.status(err.statusCode || 500).json({ error: err.message });
+  }
+
+});
 
 module.exports = router;
