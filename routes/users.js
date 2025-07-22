@@ -184,7 +184,6 @@ router.post('/', async (req, res) => {
 
   // email is the only required field in user_profile table
   // console.log(req);
-
   console.log(req.body); // this gets the request_body from the user
   const requestBody = req.body
 
@@ -231,12 +230,60 @@ router.post('/', async (req, res) => {
 // https://expressjs.com/en/guide/routing.html
 // Route parameters
 // GET users/user_id
-router.get('/:useId', async (req, res) => {
+router.get('/:userId', async (req, res) => {
   try {
-    const user = await validateModelById('user_profile', req.params.useId);
+    const user = await validateModelById('user_profile', req.params.userId);
     res.status(200).json(user);
   } catch (err) {
     // res.status(err.statusCode || 500).json({ error: err.message });
+    res.status(err.statusCode).json({ error: err.message });
+  }
+});
+
+// PATCH users/user_id
+router.patch('/:userId', async (req, res) => {
+  try {
+    const user = await validateModelById('user_profile', req.params.userId);
+
+    const requestBody = req.body
+
+    // validate if all required fields in user_profile are included in the req.body
+    const requiredFields = ['email'];
+
+    const missingFields = requiredFields.filter(field =>
+    requestBody[field] === undefined || requestBody[field] === null
+    );
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        details: `Missing required field(s): ${missingFields.join(', ')}`
+      });
+    };
+
+
+    const UpdateQuery = `
+      UPDATE user_profile
+      SET
+        email = $1,
+        name = $2,
+        address = $3,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = $4
+      RETURNING *;
+    `;
+    const values = [
+      requestBody.email,
+      requestBody.name || null,
+      requestBody.address || null,
+      req.params.userId,
+    ];
+
+    const result = await pool.query(UpdateQuery, values);
+    const updatedUser = result.rows[0];
+
+    console.log(updatedUser)
+    res.status(200).json(updatedUser);
+  } catch (err) {
     res.status(err.statusCode).json({ error: err.message });
   }
 });
