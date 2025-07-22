@@ -179,7 +179,54 @@ router.get('/', async (req, res) => {
 //     }
 // }
 
+// POST users
+router.post('/', async (req, res) => {
 
+  // email is the only required field in user_profile table
+  // console.log(req);
+
+  console.log(req.body); // this gets the request_body from the user
+  const requestBody = req.body
+
+  // validate if all required fields in user_profile are included in the req.body
+  const requiredFields = ['email'];
+
+  const missingFields = requiredFields.filter(field =>
+  requestBody[field] === undefined || requestBody[field] === null
+  );
+
+  if (missingFields.length > 0) {
+    return res.status(400).json({
+      details: `Missing required field(s): ${missingFields.join(', ')}`
+    });
+  };
+
+  try {
+    const insertQuery = `
+      INSERT INTO user_profile (email, name, address, created_at, updated_at)
+      VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      RETURNING *;
+    `;
+    const values = [
+      requestBody.email,
+      requestBody.name || null,
+      requestBody.address || null,
+    ];
+
+    const result = await pool.query(insertQuery, values);
+    const newUser = result.rows[0];
+
+    console.log(newUser)
+
+    // res.status(201).json({ user: newUser });
+    res.status(201).json(newUser);
+
+  } catch (error) {
+    console.error('Error creating goal:', error);
+    res.status(500).json({ error: 'Server error' });
+}
+
+});
 
 // https://expressjs.com/en/guide/routing.html
 // Route parameters
@@ -193,6 +240,8 @@ router.get('/:useId', async (req, res) => {
     res.status(err.statusCode).json({ error: err.message });
   }
 });
+
+
 
 
 module.exports = router;
