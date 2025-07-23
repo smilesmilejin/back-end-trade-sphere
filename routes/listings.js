@@ -3,6 +3,7 @@ var router = express.Router();
 
 // const validateModelById = require('./routes-utilities');
 const { pool } = require('../db/index');
+const validateModelById = require('./routes-utilities');
 
 
 // GET /listings
@@ -34,5 +35,35 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+// GET /listings/<listing_id>
+router.get('/:listingId', async(req, res)=> {
+
+  const listingId = req.params.listingId
+
+  try {
+
+    await validateModelById('listing', listingId)
+
+    const getSpecificListingsAndImagesQuery = `
+      SELECT 
+        l.*,
+        COALESCE(
+        json_agg(i.*) FILTER (WHERE i.image_id IS NOT NULL),
+        '[]'
+      ) AS images
+      FROM listing l
+      LEFT JOIN image i ON l.listing_id = i.listing_id
+      WHERE l.listing_id = $1
+      GROUP BY l.listing_id;
+    `;
+    const result = await pool.query(getSpecificListingsAndImagesQuery, [listingId]);
+    res.status(200).json(result.rows[0]);
+
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ error: err.message });
+  }
+});
+
 
 module.exports = router;

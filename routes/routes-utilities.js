@@ -19,7 +19,24 @@ const validateModelById = async (modelName, modelId) => {
 
     };
 
-    const query = `SELECT * FROM ${modelName} WHERE user_id = $1`;
+    // Map table names to their respective ID columns
+    const idColumns = {
+        user_profile: 'user_id',
+        listing: 'listing_id',
+        // add other models here as needed
+    };
+
+    const idColumn = idColumns[modelName];
+
+    if (!idColumn) {
+    const message = `Validation for model ${modelName} is not supported.`;
+    const error = new Error(message);
+    error.statusCode = 400;
+    throw error;
+    }
+
+
+    const query = `SELECT * FROM ${modelName} WHERE ${idColumn} = $1`;
     const res = await pool.query(query, [id]);
 
     // [
