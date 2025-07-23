@@ -388,10 +388,21 @@ router.get('/:userId/listings', async (req, res) => {
 
 
 // POST users/<user_id>/listings
+// To ensure that inserting into two tables happens as a single atomic operation — meaning both succeed or neither happens — you need to wrap them in a PostgreSQL transaction.
+// Need to add images urls
+// Add a litings with both update image table and listing table at the same time
+// image might have muptiples
+// https://node-postgres.com/features/transactions?utm_source=chatgpt.com
 router.post('/:userId/listings', async(req, res) => {
+
+
   const userId = req.params.userId;
 
+  const client = await pool.connect() // The client object obtained via const client = await pool.connect(); in node-postgres (pg package) gives you direct access to transaction control methods.
+
   try {
+    await client.query('BEGIN') // ← Start transaction
+
     const user = await validateModelById('user_profile', userId);
 
     const requestBody = req.body
@@ -413,14 +424,163 @@ router.post('/:userId/listings', async(req, res) => {
       requestBody.sold_status || false,
     ]
 
-    const result = await pool.query(insertQuery, values)
+    const insertListingresult = await client.query(insertQuery, values)
 
-    res.status(201).json(result.rows)
+    // GET listing_id from result
+    const curListingId = insertListingresult.rows[0].listing_id
+
+    const images = Array.isArray(requestBody.images) ? requestBody.images : []; //  If requestBody.images is an array (e.g. ["url1", "url2"]), it keeps the array.  If requestBody.images is undefined, null, a string, or any non-array type — it assigns an empty array ([]), preventing crashes like .length of undefined.
+
+    if (images.length > 0) {
+      for (let img_url of images) {
+        const insertImageQuery = `
+        INSERT INTO image (listing_id, image_url)
+        VALUES ($1, $2)
+        `
+
+        const imgValues = [
+          curListingId,
+          img_url,
+        ];
+
+        await client.query(insertImageQuery, imgValues)
+      }
+
+    }
+
+
+    await client.query('COMMIT');      // ← Commit if everything is OK
+
+    const getUserListingsAndImagesQuery = `
+      SELECT 
+        l.*,
+        COALESCE(
+        json_agg(i.*) FILTER (WHERE i.image_id IS NOT NULL),
+        '[]'
+      ) AS images
+      FROM listing l
+      LEFT JOIN image i ON l.listing_id = i.listing_id
+      WHERE l.listing_id = $1
+      GROUP BY l.listing_id;
+    `;
+
+
+    const finalResult = await client.query(getUserListingsAndImagesQuery, [curListingId]);
+    res.status(201).json(finalResult.rows);
+
 
   } catch(err) {
-  res.status(err.statusCode || 500).json({error: err.message})
+    await client.query('ROLLBACK');  // ← Rollback on failure
+    throw err; 
+    // res.status(err.statusCode || 500).json({error: err.message})
+  } finally {
+    client.release(); // ← Always release the client
   }
 })
+
+// PATCH /users/<user_id>/listings/<listing_id>
+router.patch('/:userId/listings/:listingId', async(req, res) => {
+  const userId = req.params.userId;
+  const listingId = req.params.listingId;
+
+  const requestBody = req.body
+
+  const client = await pool.connect() // The client object obtained via const client = await pool.connect(); in node-postgres (pg package) gives you direct access to transaction control methods.
+
+
+  try {
+    await validateModelById('user_profile', userId);
+    await validateModelById('listing', listingId);
+
+    await client.query('BEGIN')
+
+    // update listing
+
+    const updateListingQuery = `
+      UPDATE listing 
+      SET 
+        name = $1,
+        category = $2,
+        description = $3,
+        price = $4,
+        location = $5,
+        contact_information = $6,
+        updated_at = CURRENT_TIMESTAMP,
+        sold_status = $7
+      WHERE listing_id = $8 AND user_id = $9
+      RETURNING *
+      `
+
+    const listingValues = [
+      requestBody.name || null, 
+      requestBody.category || null, 
+      requestBody.description || null,
+      requestBody.price || null,
+      requestBody.location || null,
+      requestBody.contact_information || null,
+      requestBody.sold_status || false,
+      listingId,
+      userId
+    ]
+
+    const updatedListingresult = await client.query(updateListingQuery, listingValues);
+    const updatedListing = updatedListingresult.rows[0];
+
+    // delete all existing images of listing_id
+
+    const deleteImagesByListingIdQuery = `
+      DELETE FROM image
+      WHERE listing_id = $1;
+    `
+
+    const deletedImages = await client.query(deleteImagesByListingIdQuery, [listingId]);
+
+
+    // insert currrent images of listing_id
+    const images = Array.isArray(requestBody.images) ? requestBody.images : []; //  If requestBody.images is an array (e.g. ["url1", "url2"]), it keeps the array.  If requestBody.images is undefined, null, a string, or any non-array type — it assigns an empty array ([]), preventing crashes like .length of undefined.
+
+    if (images.length > 0) {
+      for (let img_url of images) {
+        const insertImageQuery = `
+        INSERT INTO image (listing_id, image_url)
+        VALUES ($1, $2)
+        `
+
+        const imgValues = [
+          listingId,
+          img_url,
+        ];
+
+        await client.query(insertImageQuery, imgValues)
+      }
+
+    }
+
+    await client.query('COMMIT')
+
+  const getUpdatedListingWithImagesQuery = `
+    SELECT 
+      l.*,
+      COALESCE(json_agg(i.*) FILTER (WHERE i.image_id IS NOT NULL), '[]') AS images
+    FROM listing l
+    LEFT JOIN image i ON l.listing_id = i.listing_id
+    WHERE l.listing_id = $1
+    GROUP BY l.listing_id;
+  `;
+
+  const finalResult = await client.query(getUpdatedListingWithImagesQuery, [listingId]);
+  
+  res.status(200).json(finalResult.rows[0]);
+
+  } catch (err) {
+    await client.query('ROLLBACK')
+    res.status(err.statusCode || 500).json({ error: err.message });
+
+  } finally {
+    client.release()
+  }
+
+});
 
 
 module.exports = router;
