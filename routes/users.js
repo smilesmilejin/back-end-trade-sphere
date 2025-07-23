@@ -1,10 +1,13 @@
 var express = require('express');
 var router = express.Router();
 
-const validateModelById = require('./routes-utilities');
+// const validateModelById = require('./routes-utilities');
+// const validateModelRequiredFields = require('./routes-utilities');
+const { validateModelById, validateModelRequiredFields} = require('./routes-utilities'); 
 const { pool } = require('../db/index');
 const userQueries = require('../db/queries/users');
 
+// Example
 /* GET users listing. */
 // router.get('/', function(req, res, next) {
 //   res.send('respond with a resource');
@@ -31,30 +34,31 @@ router.get('/', async (req, res) => {
 // POST users
 router.post('/', async (req, res) => {
 
-  // email is the only required field in user_profile table
-  console.log(req);
-  console.log(req.body); // this gets the request_body from the user
-  const requestBody = req.body
+  const requestBody = req.body // this gets the request_body from the user
 
-  // validate if all required fields in user_profile are included in the req.body
-  const requiredFields = ['email'];
+  // // validate if all required fields in user_profile are included in the req.body
+  // const requiredFields = ['email'];
 
-  const missingFields = requiredFields.filter(field =>
-  requestBody[field] === undefined || requestBody[field] === null
-  );
+  // const missingFields = requiredFields.filter(field =>
+  // requestBody[field] === undefined || requestBody[field] === null
+  // );
 
-  if (missingFields.length > 0) {
-    return res.status(400).json({
-      details: `Missing required field(s): ${missingFields.join(', ')}`
-    });
-  };
+  // if (missingFields.length > 0) {
+  //   return res.status(400).json({
+  //     details: `Missing required field(s): ${missingFields.join(', ')}`
+  //   });
+  // };
 
   try {
-    const insertQuery = `
-      INSERT INTO user_profile (email, name, address, created_at, updated_at)
-      VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-      RETURNING *;
-    `;
+    await validateModelRequiredFields('user_profile', requestBody)
+
+    // const insertQuery = `
+    //   INSERT INTO user_profile (email, name, address, created_at, updated_at)
+    //   VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    //   RETURNING *;
+    // `;
+
+    const insertQuery = userQueries.CREATE_USER;
     const values = [
       requestBody.email,
       requestBody.name || null,
@@ -64,15 +68,14 @@ router.post('/', async (req, res) => {
     const result = await pool.query(insertQuery, values);
     const newUser = result.rows[0];
 
-    console.log(newUser)
+    // console.log(newUser)
 
-    // res.status(201).json({ user: newUser });
     res.status(201).json(newUser);
 
   } catch (error) {
-    console.error('Error creating goal:', error);
-    res.status(500).json({ error: 'Server error' });
-}
+    console.error('Error creating users:', error); // Handle errors
+    res.status(error.statusCode || 500).json({ error: error.message || 'Internal server error'}); // Send back the SQL error message if available, otherwise generic message
+  }
 
 });
 
@@ -80,15 +83,12 @@ router.post('/', async (req, res) => {
 // Route parameters
 // GET users/user_id
 router.get('/:userId', async (req, res) => {
-
-  console.log(req);
-
   try {
     const user = await validateModelById('user_profile', req.params.userId);
+    // const user = await validateModelById('invalid_table', req.params.userId); // test invalid table name
     res.status(200).json(user);
   } catch (err) {
-    // res.status(err.statusCode || 500).json({ error: err.message });
-    res.status(err.statusCode).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message || 'Internal server error'});
   }
 });
 

@@ -63,7 +63,7 @@ const validateModelById = async (modelName, modelId) => {
 
 }
 
-module.exports = validateModelById;
+// module.exports = validateModelById;
 
 
 // Sample result object structure:
@@ -88,3 +88,57 @@ module.exports = validateModelById;
 // > Number('123.12')
 // 123.12
 // > 
+
+//   const requestBody = req.body;
+//   const requiredFields = ['email'];
+
+//   const missingFields = validateRequestBodyHasRequiredFields(requestBody, requiredFields);
+
+//   if (missingFields.length > 0) {
+//     return res.status(400).json({
+//       error: `Missing required field(s): ${missingFields.join(', ')}`
+//     });
+//   }
+
+const validateModelRequiredFields = async(modelName, requestBody) => {
+    // /**
+    //  * Validates that all required fields for a specific model are present in the request body.
+    //  *
+    //  * @async
+    //  * @function validateRequestBodyHasRequiredFields
+    //  * @param {string} modelName - The name of the model/table to validate against (e.g., 'user_profile').
+    //  * @param {Object} requestBody - The request body object to check.
+    //  * @throws {Error} Throws a 400 error if any required fields are missing or null.
+    //  */
+    const requredFields = {
+        'user_profile': ['email'] // email is the only required field in user_profile table
+    }
+
+    const modelRequiredFields = requredFields[modelName]
+
+    // If the model is not defined in the requiredFields map, skip validation
+    if (!modelRequiredFields) {
+        return;
+    }
+
+    // Find which required fields are missing or null in the request body
+    const missingFields = modelRequiredFields.filter(field =>
+    requestBody[field] === undefined || requestBody[field] === null
+    );
+
+    if (missingFields.length > 0) {
+        const message = `Missing required field(s): ${missingFields.join(', ')}`;
+        const error = new Error(message);
+        error.statusCode = 400;
+        throw error;
+    };
+
+};
+
+// module.exports = validateModelRequiredFields;
+
+
+module.exports = {
+  validateModelById,
+  validateModelRequiredFields,
+};
