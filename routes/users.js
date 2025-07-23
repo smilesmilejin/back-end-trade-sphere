@@ -583,4 +583,33 @@ router.patch('/:userId/listings/:listingId', async(req, res) => {
 });
 
 
+// DELETE /users/<user_id>/listings/<listing_id>
+router.delete('/:userId/listings/:listingId', async(req, res) => {
+  const userId = req.params.userId;
+  const listingId = req.params.listingId;
+
+
+
+  try {
+    await validateModelById('user_profile', userId);
+    await validateModelById('listing', listingId);
+
+    // DELETE listing will also delete images associated with that listing
+    const deleteSpecificListingQuery = `
+      DELETE FROM listing
+      WHERE listing_id = $1
+    `
+
+    await pool.query(deleteSpecificListingQuery, [listingId])
+
+  
+    res.status(204)
+
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ error: err.message });
+  }
+  
+})
+
+
 module.exports = router;
