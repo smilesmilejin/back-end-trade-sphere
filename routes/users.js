@@ -95,34 +95,24 @@ router.get('/:userId', async (req, res) => {
 // PATCH users/user_id
 router.patch('/:userId', async (req, res) => {
   try {
-    const user = await validateModelById('user_profile', req.params.userId);
-
     const requestBody = req.body
 
-    // validate if all required fields in user_profile are included in the req.body
-    const requiredFields = ['email'];
-
-    const missingFields = requiredFields.filter(field =>
-    requestBody[field] === undefined || requestBody[field] === null
-    );
-
-    if (missingFields.length > 0) {
-      return res.status(400).json({
-        details: `Missing required field(s): ${missingFields.join(', ')}`
-      });
-    };
+    await validateModelById('user_profile', req.params.userId);
+    await validateModelRequiredFields('user_profile', requestBody)
 
 
-    const UpdateQuery = `
-      UPDATE user_profile
-      SET
-        email = $1,
-        name = $2,
-        address = $3,
-        updated_at = CURRENT_TIMESTAMP
-      WHERE user_id = $4
-      RETURNING *;
-    `;
+    // const UpdateQuery = `
+    //   UPDATE user_profile
+    //   SET
+    //     email = $1,
+    //     name = $2,
+    //     address = $3,
+    //     updated_at = CURRENT_TIMESTAMP
+    //   WHERE user_id = $4
+    //   RETURNING *;
+    // `;
+
+    const UpdateQuery = userQueries.UPDATE_USER
     const values = [
       requestBody.email,
       requestBody.name || null,
@@ -133,10 +123,10 @@ router.patch('/:userId', async (req, res) => {
     const result = await pool.query(UpdateQuery, values);
     const updatedUser = result.rows[0];
 
-    console.log(updatedUser)
+    // console.log(updatedUser)
     res.status(200).json(updatedUser);
   } catch (err) {
-    res.status(err.statusCode).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message || 'Internal server error'});
   }
 });
 

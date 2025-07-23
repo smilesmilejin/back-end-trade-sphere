@@ -9,4 +9,16 @@ module.exports = {
     VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     RETURNING *;
     `,
+
+   UPDATE_USER: `
+      UPDATE user_profile
+      SET
+        email = $1,
+        name = $2,
+        address = $3,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = $4
+      RETURNING *;
+    `,
+
 };
