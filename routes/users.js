@@ -3,6 +3,7 @@ var router = express.Router();
 
 const validateModelById = require('./routes-utilities');
 const { pool } = require('../db/index');
+const userQueries = require('../db/queries/users');
 
 /* GET users listing. */
 // router.get('/', function(req, res, next) {
@@ -11,8 +12,14 @@ const { pool } = require('../db/index');
 
 // GET /users
 router.get('/', async (req, res) => {
-  const query = `SELECT * FROM user_profile`;
+
+  // console.log(req);
+
+  // const query = `SELECT * FROM user_profile`;
+  const query = userQueries.GET_ALL_USERS
   const result = await pool.query(query);
+
+  // console.log(result);
 
   res.status(200).json(result.rows);
 });
@@ -183,7 +190,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
 
   // email is the only required field in user_profile table
-  // console.log(req);
+  console.log(req);
   console.log(req.body); // this gets the request_body from the user
   const requestBody = req.body
 
@@ -231,6 +238,9 @@ router.post('/', async (req, res) => {
 // Route parameters
 // GET users/user_id
 router.get('/:userId', async (req, res) => {
+
+  console.log(req);
+
   try {
     const user = await validateModelById('user_profile', req.params.userId);
     res.status(200).json(user);
@@ -601,7 +611,9 @@ router.delete('/:userId/listings/:listingId', async(req, res) => {
     await pool.query(deleteSpecificListingQuery, [listingId])
 
   
-    res.status(204)
+    // res.status(204) /// this does not provide response:
+    res.sendStatus(204);
+    // res.status(204).send();
 
   } catch (err) {
     res.status(err.statusCode || 500).json({ error: err.message });
