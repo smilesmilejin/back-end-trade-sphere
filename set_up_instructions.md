@@ -442,3 +442,85 @@ trade_sphere_db_2sjj=> \q
 MacBook-Pro-7:back-end-trade-sphere xinshuangjin$ 
 ```
 # Add routes/routes_utilities.js  
+
+
+# Convert timestampe to timestampz to handle times zone differences: 
+
+
+Create a new migration file inside your migrations folder.
+The file will be named with a timestamp prefix plus add-timestamptz-to-all-tables.js, for example:
+
+```
+npx node-pg-migrate create add-timestamptz-to-all-tables --migrations-dir migrations
+```
+
+run 
+
+```npm run migrate up```
+```
+MacBook-Pro-7:back-end-trade-sphere xinshuangjin$ npm run migrate up
+
+> back-end-trade-sphere@0.0.0 migrate
+> node-pg-migrate up
+
+[dotenv@17.2.0] injecting env (1) from .env (tip: 🔐 encrypt with dotenvx: https://dotenvx.com)
+(node:20968) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/xinshuangjin/Developer/capstone/back-end-trade-sphere/migrations/1753308706123_add-timestamptz-to-all-tables.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/xinshuangjin/Developer/capstone/back-end-trade-sphere/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+> Migrating files:
+> - 1753308706123_add-timestamptz-to-all-tables
+### MIGRATION 1753308706123_add-timestamptz-to-all-tables (UP) ###
+ALTER TABLE "user_profile"
+  ALTER "created_at" SET DEFAULT current_timestamp,
+  ALTER "created_at" SET DATA TYPE timestamptz,
+  ALTER "created_at" SET NOT NULL;
+ALTER TABLE "user_profile"
+  ALTER "updated_at" SET DEFAULT current_timestamp,
+  ALTER "updated_at" SET DATA TYPE timestamptz,
+  ALTER "updated_at" SET NOT NULL;
+ALTER TABLE "listing"
+  ALTER "created_at" SET DEFAULT current_timestamp,
+  ALTER "created_at" SET DATA TYPE timestamptz,
+  ALTER "created_at" SET NOT NULL;
+ALTER TABLE "listing"
+  ALTER "updated_at" SET DEFAULT current_timestamp,
+  ALTER "updated_at" SET DATA TYPE timestamptz,
+  ALTER "updated_at" SET NOT NULL;
+ALTER TABLE "user_favorite_listing"
+  ALTER "created_at" SET DEFAULT current_timestamp,
+  ALTER "created_at" SET DATA TYPE timestamptz,
+  ALTER "created_at" SET NOT NULL;
+INSERT INTO "public"."pgmigrations" (name, run_on) VALUES ('1753308706123_add-timestamptz-to-all-tables', NOW());
+
+
+Migrations complete!
+MacBook-Pro-7:back-end-trade-sphere xinshuangjin$ 
+```
+
+# Confirm if columns changes to tables
+
+```
+\d user_profile
+```
+
+```
+trade_sphere_db_2sjj=> \d user_profile
+                                         Table "public.user_profile"
+   Column   |           Type           | Collation | Nullable |                    Default                    
+------------+--------------------------+-----------+----------+-----------------------------------------------
+ user_id    | integer                  |           | not null | nextval('user_profile_user_id_seq'::regclass)
+ email      | character varying(255)   |           | not null | 
+ name       | character varying(255)   |           |          | 
+ address    | text                     |           |          | 
+ created_at | timestamp with time zone |           | not null | CURRENT_TIMESTAMP
+ updated_at | timestamp with time zone |           | not null | CURRENT_TIMESTAMP
+Indexes:
+    "user_profile_pkey" PRIMARY KEY, btree (user_id)
+Referenced by:
+    TABLE "listing" CONSTRAINT "listing_user_id_fkey" FOREIGN KEY (user_id) REFERENCES user_profile(user_id) ON DELETE CASCADE
+    TABLE "user_favorite_listing" CONSTRAINT "user_favorite_listing_user_id_fkey" FOREIGN KEY (user_id) REFERENCES user_profile(user_id) ON DELETE CASCADE
+```
+
+
+timestamp with time zone stores the timestamp in UTC internally and automatically handles time zone conversions.
