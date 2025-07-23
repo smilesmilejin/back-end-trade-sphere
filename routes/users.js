@@ -588,10 +588,8 @@ router.delete('/:userId/listings/:listingId', async(req, res) => {
   const userId = req.params.userId;
   const listingId = req.params.listingId;
 
-
-
   try {
-    await validateModelById('user_profile', userId);
+    // await validateModelById('user_profile', userId);
     await validateModelById('listing', listingId);
 
     // DELETE listing will also delete images associated with that listing
@@ -611,5 +609,31 @@ router.delete('/:userId/listings/:listingId', async(req, res) => {
   
 })
 
+// GET /users/<user_id>/favorites
+
+router.get('/:userId/favorites', async(req, res) => {
+  const userId = req.params.userId;
+
+  try {
+
+    await validateModelById('user_profile', userId)
+
+    const getUsersFavoriteListingsQuery = `
+      SELECT 
+        u.user_id, 
+        l.*
+      FROM user_favorite_listing u
+      JOIN listing l ON l.listing_id = u.listing_id
+      WHERE u.user_id = $1
+    `
+
+    const result = await pool.query(getUsersFavoriteListingsQuery, [userId])
+
+    res.status(200).json(result.rows)
+
+  } catch (err) {
+    res.status(err.statusCode || 500).json({error: err.message})
+  }
+})
 
 module.exports = router;
