@@ -113,6 +113,9 @@ export const up = (pgm) => {
   });
 
   // user_favorite_listing table
+  // user_id and listing_id as composite primary keys
+  // Each (user_id, listing_id) pair must be unique.
+  // But a single user_id can appear multiple times as long as it's with different listing_ids (i.e., multiple favorites).
   pgm.createTable('user_favorite_listing', {
     user_id: {
       type: 'integer',

@@ -636,4 +636,36 @@ router.get('/:userId/favorites', async(req, res) => {
   }
 })
 
+
+// POST /users/<user_id>/favorites
+router.post('/:userId/favorites/:listingId', async(req, res) => {
+  const userId = req.params.userId;
+  const listingId = req.params.listingId;
+
+  try {
+    await validateModelById('user_profile', userId);
+    await validateModelById('listing', listingId);
+
+    const insertUserFavoriteQuery = `
+      INSERT INTO user_favorite_listing (user_id, listing_id, created_at)
+      VALUES ($1, $2, CURRENT_TIMESTAMP)
+      RETURNING *;
+    `;
+
+    await pool.query(insertUserFavoriteQuery, [userId, listingId])
+
+    const selectInsertedUserFavoriteQuery = `
+      SELECT * FROM user_favorite_listing 
+      WHERE user_id = $1 AND listing_id = $2
+    `
+    const result = await pool.query (selectInsertedUserFavoriteQuery, [userId, listingId])
+
+    res.status(201).json(result.rows)
+
+
+  } catch (err) {
+    res.status(err.statusCode || 500).json({error: err.message})
+  }
+})
+
 module.exports = router;
