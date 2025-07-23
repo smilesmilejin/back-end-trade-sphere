@@ -637,7 +637,7 @@ router.get('/:userId/favorites', async(req, res) => {
 })
 
 
-// POST /users/<user_id>/favorites
+// POST /users/<user_id>/favorites/listing_id
 router.post('/:userId/favorites/:listingId', async(req, res) => {
   const userId = req.params.userId;
   const listingId = req.params.listingId;
@@ -661,6 +661,36 @@ router.post('/:userId/favorites/:listingId', async(req, res) => {
     const result = await pool.query (selectInsertedUserFavoriteQuery, [userId, listingId])
 
     res.status(201).json(result.rows)
+
+
+  } catch (err) {
+    res.status(err.statusCode || 500).json({error: err.message})
+  }
+})
+
+
+// DELETE /users/<user_id>/favorites/listing_id
+router.delete('/:userId/favorites/:listingId', async(req, res) => {
+  const userId = req.params.userId;
+  const listingId = req.params.listingId;
+
+  try {
+    // Varify if userid and listingid is a valid combination
+
+    const deleteUserFavoriteQuery = `
+      DELETE FROM user_favorite_listing
+      WHERE user_id = $1 AND listing_id = $2
+      RETURNING *;
+    `;
+
+    const result = await pool.query(deleteUserFavoriteQuery, [userId, listingId])
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({error:" 'Favorite not found"})
+    }
+
+    // res.status(204) // the response it never send
+    res.status(204).send();
 
 
   } catch (err) {
