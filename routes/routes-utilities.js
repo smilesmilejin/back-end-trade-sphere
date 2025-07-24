@@ -110,11 +110,11 @@ const validateModelRequiredFields = async(modelName, requestBody) => {
     //  * @param {Object} requestBody - The request body object to check.
     //  * @throws {Error} Throws a 400 error if any required fields are missing or null.
     //  */
-    const requredFields = {
+    const requiredFields = {
         'user_profile': ['email'] // email is the only required field in user_profile table
     }
 
-    const modelRequiredFields = requredFields[modelName]
+    const modelRequiredFields = requiredFields[modelName]
 
     // If the model is not defined in the requiredFields map, skip validation
     if (!modelRequiredFields) {
