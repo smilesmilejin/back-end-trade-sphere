@@ -1,8 +1,6 @@
 var express = require('express');
 var router = express.Router();
 
-// const validateModelById = require('./routes-utilities');
-// const validateModelRequiredFields = require('./routes-utilities');
 const { validateModelById, validateModelRequiredFields} = require('./routes-utilities'); 
 const { pool } = require('../db/index');
 const userQueries = require('../db/queries/users');

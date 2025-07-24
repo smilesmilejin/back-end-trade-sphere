@@ -7,7 +7,7 @@ const { Pool, Client } = pg
 
 // const connectionString = 'postgres://postgres:postgres@localhost:5432/node_pg'
 const connectionString = process.env.DATABASE_URL;
-console.log('connection string is: ', connectionString)
+// console.log('connection string is: ', connectionString)
 
 
 // Add SSL options
