@@ -438,25 +438,28 @@ router.post('/:userId/favorites/:listingId', async(req, res) => {
     await validateModelById('user_profile', userId);
     await validateModelById('listing', listingId);
 
-    const insertUserFavoriteQuery = `
-      INSERT INTO user_favorite_listing (user_id, listing_id, created_at)
-      VALUES ($1, $2, CURRENT_TIMESTAMP)
-      RETURNING *;
-    `;
+    // const insertUserFavoriteQuery = `
+    //   INSERT INTO user_favorite_listing (user_id, listing_id, created_at)
+    //   VALUES ($1, $2, CURRENT_TIMESTAMP)
+    //   RETURNING *;
+    // `;
 
-    await pool.query(insertUserFavoriteQuery, [userId, listingId])
+    const insertUserFavoriteQuery = favoriteQueries.CREATE_USER_FAVORITE_LISTING
 
-    const selectInsertedUserFavoriteQuery = `
-      SELECT * FROM user_favorite_listing 
-      WHERE user_id = $1 AND listing_id = $2
-    `
-    const result = await pool.query (selectInsertedUserFavoriteQuery, [userId, listingId])
+    // await pool.query(insertUserFavoriteQuery, [userId, listingId])
+
+    const result = await pool.query(insertUserFavoriteQuery, [userId, listingId])
+
+    // const selectInsertedUserFavoriteQuery = `
+    //   SELECT * FROM user_favorite_listing 
+    //   WHERE user_id = $1 AND listing_id = $2
+    // `
+    // const result = await pool.query (selectInsertedUserFavoriteQuery, [userId, listingId])
 
     res.status(201).json(result.rows)
 
-
   } catch (err) {
-    res.status(err.statusCode || 500).json({error: err.message})
+    res.status(err.statusCode || 500).json({ error: err.message || 'Internal server error'});
   }
 })
 
@@ -467,27 +470,29 @@ router.delete('/:userId/favorites/:listingId', async(req, res) => {
   const listingId = req.params.listingId;
 
   try {
+    await validateModelById('user_profile', userId);
+    await validateModelById('listing', listingId);
     // Varify if userid and listingid is a valid combination
+    // const deleteUserFavoriteQuery = `
+    //   DELETE FROM user_favorite_listing
+    //   WHERE user_id = $1 AND listing_id = $2
+    //   RETURNING *;
+    // `;
 
-    const deleteUserFavoriteQuery = `
-      DELETE FROM user_favorite_listing
-      WHERE user_id = $1 AND listing_id = $2
-      RETURNING *;
-    `;
-
+    const deleteUserFavoriteQuery = favoriteQueries.DELETE_USER_FAVORITE_LISTING;
     const result = await pool.query(deleteUserFavoriteQuery, [userId, listingId])
 
+    // Verify if the (user_id, listing_id) pair exists
     if (result.rowCount === 0) {
-      return res.status(404).json({error:" 'Favorite not found"})
+      return res.status(404).json({ error: "Favorite listing not found for this user" });
     }
 
-    // res.status(204) // the response it never send
     res.status(204).send();
 
 
   } catch (err) {
-    res.status(err.statusCode || 500).json({error: err.message})
+    res.status(err.statusCode || 500).json({ error: err.message || 'Internal server error'});
   }
-})
+});
 
 module.exports = router;
