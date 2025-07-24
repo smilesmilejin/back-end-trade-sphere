@@ -267,11 +267,9 @@ router.post('/:userId/listings', async(req, res) => {
 router.patch('/:userId/listings/:listingId', async(req, res) => {
   const userId = req.params.userId;
   const listingId = req.params.listingId;
-
   const requestBody = req.body
 
   const client = await pool.connect() // The client object obtained via const client = await pool.connect(); in node-postgres (pg package) gives you direct access to transaction control methods.
-
 
   try {
     await validateModelById('user_profile', userId);
@@ -280,21 +278,21 @@ router.patch('/:userId/listings/:listingId', async(req, res) => {
     await client.query('BEGIN')
 
     // update listing
-
-    const updateListingQuery = `
-      UPDATE listing 
-      SET 
-        name = $1,
-        category = $2,
-        description = $3,
-        price = $4,
-        location = $5,
-        contact_information = $6,
-        updated_at = CURRENT_TIMESTAMP,
-        sold_status = $7
-      WHERE listing_id = $8 AND user_id = $9
-      RETURNING *
-      `
+    // const updateListingQuery = `
+    //   UPDATE listing 
+    //   SET 
+    //     name = $1,
+    //     category = $2,
+    //     description = $3,
+    //     price = $4,
+    //     location = $5,
+    //     contact_information = $6,
+    //     updated_at = CURRENT_TIMESTAMP,
+    //     sold_status = $7
+    //   WHERE listing_id = $8 AND user_id = $9
+    //   RETURNING *
+    //   `
+    const updateListingQuery = listingQueries.UPDATE_LISTING;
 
     const listingValues = [
       requestBody.name || null, 
@@ -312,13 +310,15 @@ router.patch('/:userId/listings/:listingId', async(req, res) => {
     const updatedListing = updatedListingresult.rows[0];
 
     // delete all existing images of listing_id
+    // const deleteImagesByListingIdQuery = `
+    //   DELETE FROM image
+    //   WHERE listing_id = $1;
+    // `
 
-    const deleteImagesByListingIdQuery = `
-      DELETE FROM image
-      WHERE listing_id = $1;
-    `
+    const deleteImagesByListingIdQuery = imageQueries.DELETE_IMAGES_BY_LISTING_ID
 
-    const deletedImages = await client.query(deleteImagesByListingIdQuery, [listingId]);
+    // const deletedImages = await client.query(deleteImagesByListingIdQuery, [listingId]);
+    await client.query(deleteImagesByListingIdQuery, [listingId]);
 
 
     // insert currrent images of listing_id
@@ -326,10 +326,11 @@ router.patch('/:userId/listings/:listingId', async(req, res) => {
 
     if (images.length > 0) {
       for (let img_url of images) {
-        const insertImageQuery = `
-        INSERT INTO image (listing_id, image_url)
-        VALUES ($1, $2)
-        `
+        // const insertImageQuery = `
+        // INSERT INTO image (listing_id, image_url)
+        // VALUES ($1, $2)
+        // `
+        const insertImageQuery = imageQueries.CREATE_LISTING_IMAGE
 
         const imgValues = [
           listingId,
@@ -343,24 +344,24 @@ router.patch('/:userId/listings/:listingId', async(req, res) => {
 
     await client.query('COMMIT')
 
-  const getUpdatedListingWithImagesQuery = `
-    SELECT 
-      l.*,
-      COALESCE(json_agg(i.*) FILTER (WHERE i.image_id IS NOT NULL), '[]') AS images
-    FROM listing l
-    LEFT JOIN image i ON l.listing_id = i.listing_id
-    WHERE l.listing_id = $1
-    GROUP BY l.listing_id;
-  `;
+  // const getUpdatedListingWithImagesQuery = `
+  //   SELECT 
+  //     l.*,
+  //     COALESCE(json_agg(i.*) FILTER (WHERE i.image_id IS NOT NULL), '[]') AS images
+  //   FROM listing l
+  //   LEFT JOIN image i ON l.listing_id = i.listing_id
+  //   WHERE l.listing_id = $1
+  //   GROUP BY l.listing_id;
+  // `;
 
+  const getUpdatedListingWithImagesQuery = listingQueries.GET_LISTING_WITH_IMAGES_BY_ID
   const finalResult = await client.query(getUpdatedListingWithImagesQuery, [listingId]);
-  
+
   res.status(200).json(finalResult.rows[0]);
 
   } catch (err) {
     await client.query('ROLLBACK')
-    res.status(err.statusCode || 500).json({ error: err.message });
-
+    res.status(err.statusCode || 500).json({ error: err.message || 'Internal server error'}); // Send error response here instead of throwing
   } finally {
     client.release()
   }

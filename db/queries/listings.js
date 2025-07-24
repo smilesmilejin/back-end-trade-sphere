@@ -54,5 +54,20 @@ module.exports = {
     VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $8)
     RETURNING *;
     `,
+
+    UPDATE_LISTING: `
+      UPDATE listing 
+      SET 
+        name = $1,
+        category = $2,
+        description = $3,
+        price = $4,
+        location = $5,
+        contact_information = $6,
+        updated_at = CURRENT_TIMESTAMP,
+        sold_status = $7
+      WHERE listing_id = $8 AND user_id = $9
+      RETURNING *;
+      `,
     
 };
