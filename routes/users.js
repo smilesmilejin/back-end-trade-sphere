@@ -8,6 +8,7 @@ const { pool } = require('../db/index');
 const userQueries = require('../db/queries/users');
 const listingQueries = require('../db/queries/listings');
 const imageQueries = require('../db/queries/images');
+const favoriteQueries = require('../db/queries/favorite-listings');
 
 // Example
 /* GET users listing. */
@@ -408,14 +409,15 @@ router.get('/:userId/favorites', async(req, res) => {
 
     await validateModelById('user_profile', userId)
 
-    const getUsersFavoriteListingsQuery = `
-      SELECT 
-        u.user_id, 
-        l.*
-      FROM user_favorite_listing u
-      JOIN listing l ON l.listing_id = u.listing_id
-      WHERE u.user_id = $1
-    `
+    // const getUsersFavoriteListingsQuery = `
+    //   SELECT 
+    //     u.user_id, 
+    //     l.*
+    //   FROM user_favorite_listing u
+    //   JOIN listing l ON l.listing_id = u.listing_id
+    //   WHERE u.user_id = $1
+    // `
+    const getUsersFavoriteListingsQuery = favoriteQueries.GET_USER_FAVORITE_LISTINGS
 
     const result = await pool.query(getUsersFavoriteListingsQuery, [userId])
 
