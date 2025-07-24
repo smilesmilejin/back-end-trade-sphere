@@ -489,7 +489,6 @@ router.delete('/:userId/favorites/:listingId', async(req, res) => {
 
     res.status(204).send();
 
-
   } catch (err) {
     res.status(err.statusCode || 500).json({ error: err.message || 'Internal server error'});
   }
