@@ -6,6 +6,8 @@ var router = express.Router();
 const { validateModelById, validateModelRequiredFields} = require('./routes-utilities'); 
 const { pool } = require('../db/index');
 const userQueries = require('../db/queries/users');
+const listingQueries = require('../db/queries/listings');
+const imageQueries = require('../db/queries/images');
 
 // Example
 /* GET users listing. */
@@ -167,30 +169,29 @@ router.get('/:userId/listings', async (req, res) => {
 
 
 // POST users/<user_id>/listings
-// To ensure that inserting into two tables happens as a single atomic operation — meaning both succeed or neither happens — you need to wrap them in a PostgreSQL transaction.
+// To ensure that inserting into two tables (listing, image) happens as a single atomic operation — meaning both succeed or neither happens — you need to wrap them in a PostgreSQL transaction.
 // Need to add images urls
 // Add a litings with both update image table and listing table at the same time
 // image might have muptiples
 // https://node-postgres.com/features/transactions?utm_source=chatgpt.com
 router.post('/:userId/listings', async(req, res) => {
-
-
   const userId = req.params.userId;
-
   const client = await pool.connect() // The client object obtained via const client = await pool.connect(); in node-postgres (pg package) gives you direct access to transaction control methods.
 
   try {
     await client.query('BEGIN') // ← Start transaction
 
-    const user = await validateModelById('user_profile', userId);
+    await validateModelById('user_profile', userId);
 
     const requestBody = req.body
 
-    const insertQuery = `
-    INSERT INTO listing (user_id, name, category, description, price, location, contact_information, created_at, updated_at, sold_status)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $8)
-    RETURNING *
-    `
+    // const insertQuery = `
+    // INSERT INTO listing (user_id, name, category, description, price, location, contact_information, created_at, updated_at, sold_status)
+    // VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $8)
+    // RETURNING *
+    // `
+
+    const createListingQuery = listingQueries.CREATE_LISTING
 
     const values = [
       userId,
@@ -203,7 +204,8 @@ router.post('/:userId/listings', async(req, res) => {
       requestBody.sold_status || false,
     ]
 
-    const insertListingresult = await client.query(insertQuery, values)
+    // const insertListingresult = await client.query(insertQuery, values)
+    const insertListingresult = await client.query(createListingQuery, values)
 
     // GET listing_id from result
     const curListingId = insertListingresult.rows[0].listing_id
@@ -212,46 +214,50 @@ router.post('/:userId/listings', async(req, res) => {
 
     if (images.length > 0) {
       for (let img_url of images) {
-        const insertImageQuery = `
-        INSERT INTO image (listing_id, image_url)
-        VALUES ($1, $2)
-        `
+        // const insertImageQuery = `
+        // INSERT INTO image (listing_id, image_url)
+        // VALUES ($1, $2)
+        // `
 
+        const insertListingImageQuery = imageQueries.CREATE_LISTING_IMAGE
         const imgValues = [
           curListingId,
           img_url,
         ];
 
-        await client.query(insertImageQuery, imgValues)
+        // await client.query(insertImageQuery, imgValues)
+        await client.query(insertListingImageQuery, imgValues)
       }
-
     }
-
 
     await client.query('COMMIT');      // ← Commit if everything is OK
 
-    const getUserListingsAndImagesQuery = `
-      SELECT 
-        l.*,
-        COALESCE(
-        json_agg(i.*) FILTER (WHERE i.image_id IS NOT NULL),
-        '[]'
-      ) AS images
-      FROM listing l
-      LEFT JOIN image i ON l.listing_id = i.listing_id
-      WHERE l.listing_id = $1
-      GROUP BY l.listing_id;
-    `;
+    // const getUserListingsAndImagesQuery = `
+    //   SELECT 
+    //     l.*,
+    //     COALESCE(
+    //     json_agg(i.*) FILTER (WHERE i.image_id IS NOT NULL),
+    //     '[]'
+    //   ) AS images
+    //   FROM listing l
+    //   LEFT JOIN image i ON l.listing_id = i.listing_id
+    //   WHERE l.listing_id = $1
+    //   GROUP BY l.listing_id;
+    // `;
 
+    // const finalResult = await client.query(getUserListingsAndImagesQuery, [curListingId]);
 
-    const finalResult = await client.query(getUserListingsAndImagesQuery, [curListingId]);
+    const query = listingQueries.GET_LISTING_WITH_IMAGES_BY_ID
+    const finalResult = await client.query(query, [curListingId]);
+
     res.status(201).json(finalResult.rows);
-
 
   } catch(err) {
     await client.query('ROLLBACK');  // ← Rollback on failure
-    throw err; 
-    // res.status(err.statusCode || 500).json({error: err.message})
+    // throw err; 
+    console.error('Transaction error:', err);
+    res.status(err.statusCode || 500).json({ error: err.message || 'Internal server error'}); // Send error response here instead of throwing
+
   } finally {
     client.release(); // ← Always release the client
   }

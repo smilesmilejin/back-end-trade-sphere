@@ -48,4 +48,11 @@ module.exports = {
     WHERE l.listing_id = $1
     GROUP BY l.listing_id;
     `,
+
+    CREATE_LISTING: `
+    INSERT INTO listing (user_id, name, category, description, price, location, contact_information, created_at, updated_at, sold_status)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $8)
+    RETURNING *;
+    `,
+    
 };
