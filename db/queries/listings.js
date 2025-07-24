@@ -69,5 +69,11 @@ module.exports = {
       WHERE listing_id = $8 AND user_id = $9
       RETURNING *;
       `,
+
+    // DELETE listing will also delete images in image table associated with that listing
+    DELETE_LISTING_BY_ID: `
+      DELETE FROM listing
+      WHERE listing_id = $1;
+    `,
     
 };

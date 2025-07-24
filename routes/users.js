@@ -379,26 +379,28 @@ router.delete('/:userId/listings/:listingId', async(req, res) => {
     await validateModelById('listing', listingId);
 
     // DELETE listing will also delete images associated with that listing
-    const deleteSpecificListingQuery = `
-      DELETE FROM listing
-      WHERE listing_id = $1
-    `
+    // const deleteSpecificListingQuery = `
+    //   DELETE FROM listing
+    //   WHERE listing_id = $1
+    // `
 
+    const deleteSpecificListingQuery = listingQueries.DELETE_LISTING_BY_ID
     await pool.query(deleteSpecificListingQuery, [listingId])
 
-  
     // res.status(204) /// this does not provide response:
-    res.sendStatus(204);
+    // User one of the following:
+    // res.sendStatus(204);
     // res.status(204).send();
 
+    res.status(204).send(); // No content
+
   } catch (err) {
-    res.status(err.statusCode || 500).json({ error: err.message });
+    res.status(err.statusCode || 500).json({ error: err.message || 'Internal server error'});
   }
   
 })
 
 // GET /users/<user_id>/favorites
-
 router.get('/:userId/favorites', async(req, res) => {
   const userId = req.params.userId;
 
@@ -420,7 +422,7 @@ router.get('/:userId/favorites', async(req, res) => {
     res.status(200).json(result.rows)
 
   } catch (err) {
-    res.status(err.statusCode || 500).json({error: err.message})
+    res.status(err.statusCode || 500).json({ error: err.message || 'Internal server error'});
   }
 })
 
