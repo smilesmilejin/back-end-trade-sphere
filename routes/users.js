@@ -492,4 +492,34 @@ router.delete('/:userId/favorites/:listingId', async(req, res) => {
   }
 });
 
+
+
+// POST /users/login
+// verify users login 
+router.post('/login', async(req, res) => {
+  const requestBody = req.body
+
+  try {
+    await validateModelRequiredFields('user_profile', requestBody)
+
+    const selectUserByEmailQuery = `
+      SELECT * FROM user_profile
+      WHERE email = $1;
+    `;
+
+    const email = req.body.email
+
+    const result = await pool.query(selectUserByEmailQuery, [email])
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({"message": "User with this email does not exist"})
+    }
+
+    res.status(200).json(result.rows[0])
+
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ error: err.message || 'Internal server error'});
+  }
+});
+
 module.exports = router;
