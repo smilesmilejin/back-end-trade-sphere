@@ -13,6 +13,16 @@ var app = express();
 var cors = require('cors'); // Import cors
 app.use(cors()); // Enable CORS before any routes
 
+// NOT needed
+// app.use(cors({
+//   origin: 'http://localhost:5173', // allow your Vite frontend
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+//   credentials: true // allow cookies/headers if needed
+// }));
+
+// Optional but helpful: handle preflight requests
+// app.options('*', cors());
+
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));

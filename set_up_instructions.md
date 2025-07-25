@@ -559,13 +559,17 @@ MacBook-Pro-7:back-end-trade-sphere xinshuangjin$
 ```
 
 
-**In app.js, to enable cors
+**In app.js, to enable cors, 
+It is working for when local front-end (5173) send to localhost back-end http://localhost:3000, it also works for deployed front-end sent to localhost back-end http://localhost:3000
 ```js
 var cors = require('cors'); // Import cors
 app.use(cors()); // Enable CORS before any routes
 ```
 
-It is working for localhost, but NOT for deployed backend.
+
+It does not work when local front-end send to deployed back-end:
+Error: local frontend (http://localhost:5173) cannot send requests to your deployed backend (https://back-end-trade-sphere.onrender.com) because of a CORS misconfiguration on the backend.
+Error:
 
 ```
 POST https://back-end-trade-sphere.onrender.com/users/login net::ERR_FAILED
@@ -611,3 +615,42 @@ login:1 Access to XMLHttpRequest at 'https://back-end-trade-sphere.onrender.com/
 Login.jsx:25 AxiosError {message: 'Network Error', name: 'AxiosError', code: 'ERR_NETWORK', config: {…}, request: XMLHttpRequest, …}
 Login.jsx:26 Login failed: AxiosError {message: 'Network Error', name: 'AxiosError', code: 'ERR_NETWORK', config: {…}, request: XMLHttpRequest, …}
 ```
+
+Solution in App.js Replace app.use(cors()); with the following:
+
+app.use(cors({
+  origin: 'http://localhost:5173', // allow your Vite frontend
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true // allow cookies/headers if needed
+}));
+
+
+```
+Login response: 
+{user_id: 14, email: 'abc@gmail.com', name: null, address: null, created_at: '2025-07-25T02:56:25.147Z', …}
+address
+: 
+null
+created_at
+: 
+"2025-07-25T02:56:25.147Z"
+email
+: 
+"abc@gmail.com"
+name
+: 
+null
+updated_at
+: 
+"2025-07-25T02:56:25.147Z"
+user_id
+: 
+14
+[[Prototype]]
+: 
+Object
+```
+
+However, next time, app.use(cors());  works again?
+
+Solution just use app.use(cors());
