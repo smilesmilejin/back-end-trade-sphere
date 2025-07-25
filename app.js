@@ -10,6 +10,10 @@ var listingsRouter = require('./routes/listings');
 
 var app = express();
 
+var cors = require('cors'); // Import cors
+app.use(cors()); // Enable CORS before any routes
+
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');

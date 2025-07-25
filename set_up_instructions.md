@@ -524,3 +524,90 @@ Referenced by:
 
 
 timestamp with time zone stores the timestamp in UTC internally and automatically handles time zone conversions.
+
+# CORS (Cross-Origin Resource Sharing) error
+You're encountering a CORS (Cross-Origin Resource Sharing) error, which is a common issue when a frontend (running on one origin, e.g., http://localhost:5173) tries to communicate with a backend server (e.g., https://back-end-trade-sphere.onrender.com) that doesn't explicitly allow requests from that origin.
+
+Solution
+
+https://expressjs.com/en/resources/middleware/cors.html
+
+```
+npm install cors
+```
+
+
+Installed
+```
+MacBook-Pro-7:back-end-trade-sphere xinshuangjin$ npm install cors
+
+added 2 packages, and audited 171 packages in 1s
+
+15 packages are looking for funding
+  run `npm fund` for details
+
+14 vulnerabilities (6 low, 5 high, 3 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+MacBook-Pro-7:back-end-trade-sphere xinshuangjin$ 
+```
+
+
+**In app.js, to enable cors
+```js
+var cors = require('cors'); // Import cors
+app.use(cors()); // Enable CORS before any routes
+```
+
+It is working for localhost, but NOT for deployed backend.
+
+```
+POST https://back-end-trade-sphere.onrender.com/users/login net::ERR_FAILED
+dispatchXhrRequest @ axios.js?v=733aac55:1672
+xhr @ axios.js?v=733aac55:1552
+dispatchRequest @ axios.js?v=733aac55:2027
+_request @ axios.js?v=733aac55:2248
+request @ axios.js?v=733aac55:2139
+httpMethod @ axios.js?v=733aac55:2277
+wrap @ axios.js?v=733aac55:8
+loginUserApi @ Login.jsx:18
+handleSubmit @ Login.jsx:42
+executeDispatch @ react-dom_client.js?v=733aac55:11736
+runWithFiberInDEV @ react-dom_client.js?v=733aac55:1485
+processDispatchQueue @ react-dom_client.js?v=733aac55:11772
+(anonymous) @ react-dom_client.js?v=733aac55:12182
+batchedUpdates$1 @ react-dom_client.js?v=733aac55:2628
+dispatchEventForPluginEventSystem @ react-dom_client.js?v=733aac55:11877
+dispatchEvent @ react-dom_client.js?v=733aac55:14792
+dispatchDiscreteEvent @ react-dom_client.js?v=733aac55:14773Understand this error
+login:1 Access to XMLHttpRequest at 'https://back-end-trade-sphere.onrender.com/users/login' from origin 'http://localhost:5173' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.Understand this error
+Login.jsx:25 AxiosError {message: 'Network Error', name: 'AxiosError', code: 'ERR_NETWORK', config: {…}, request: XMLHttpRequest, …}
+Login.jsx:26 Login failed: AxiosError {message: 'Network Error', name: 'AxiosError', code: 'ERR_NETWORK', config: {…}, request: XMLHttpRequest, …}
+```POST https://back-end-trade-sphere.onrender.com/users/login net::ERR_FAILED
+dispatchXhrRequest @ axios.js?v=733aac55:1672
+xhr @ axios.js?v=733aac55:1552
+dispatchRequest @ axios.js?v=733aac55:2027
+_request @ axios.js?v=733aac55:2248
+request @ axios.js?v=733aac55:2139
+httpMethod @ axios.js?v=733aac55:2277
+wrap @ axios.js?v=733aac55:8
+loginUserApi @ Login.jsx:18
+handleSubmit @ Login.jsx:42
+executeDispatch @ react-dom_client.js?v=733aac55:11736
+runWithFiberInDEV @ react-dom_client.js?v=733aac55:1485
+processDispatchQueue @ react-dom_client.js?v=733aac55:11772
+(anonymous) @ react-dom_client.js?v=733aac55:12182
+batchedUpdates$1 @ react-dom_client.js?v=733aac55:2628
+dispatchEventForPluginEventSystem @ react-dom_client.js?v=733aac55:11877
+dispatchEvent @ react-dom_client.js?v=733aac55:14792
+dispatchDiscreteEvent @ react-dom_client.js?v=733aac55:14773Understand this error
+login:1 Access to XMLHttpRequest at 'https://back-end-trade-sphere.onrender.com/users/login' from origin 'http://localhost:5173' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.Understand this error
+Login.jsx:25 AxiosError {message: 'Network Error', name: 'AxiosError', code: 'ERR_NETWORK', config: {…}, request: XMLHttpRequest, …}
+Login.jsx:26 Login failed: AxiosError {message: 'Network Error', name: 'AxiosError', code: 'ERR_NETWORK', config: {…}, request: XMLHttpRequest, …}
+```
