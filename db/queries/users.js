@@ -10,7 +10,7 @@ module.exports = {
     RETURNING *;
     `,
 
-   UPDATE_USER: `
+  UPDATE_USER: `
       UPDATE user_profile
       SET
         email = $1,
@@ -20,6 +20,13 @@ module.exports = {
       WHERE user_id = $4
       RETURNING *;
     `,
+
+    // Fetch a user by email (for login or lookups)
+  GET_USER_BY_EMAIL: `
+    SELECT * FROM user_profile
+    WHERE email = $1;
+  `,
+
 
   GET_LISTINGS_WITH_IMAGES_BY_USER_ID: `
     SELECT 

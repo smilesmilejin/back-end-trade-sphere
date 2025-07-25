@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 
-const { validateModelById, validateModelRequiredFields} = require('./routes-utilities'); 
+const { validateModelById, validateModelRequiredFields, checkEmailExistsInUserProfile} = require('./routes-utilities'); 
 const { pool } = require('../db/index');
 const userQueries = require('../db/queries/users');
 const listingQueries = require('../db/queries/listings');
@@ -51,7 +51,11 @@ router.post('/', async (req, res) => {
   // };
 
   try {
-    await validateModelRequiredFields('user_profile', requestBody)
+    await validateModelRequiredFields('user_profile', requestBody);
+    
+    // if email is already registered, the function will throw an error
+    const email = req.body.email;
+    await checkEmailExistsInUserProfile(email);
 
     // const insertQuery = `
     //   INSERT INTO user_profile (email, name, address, created_at, updated_at)
@@ -502,19 +506,22 @@ router.post('/login', async(req, res) => {
   try {
     await validateModelRequiredFields('user_profile', requestBody)
 
-    const selectUserByEmailQuery = `
-      SELECT * FROM user_profile
-      WHERE email = $1;
-    `;
+    // const selectUserByEmailQuery = `
+    //   SELECT * FROM user_profile
+    //   WHERE email = $1;
+    // `;
+
+    const selectUserByEmailQuery = userQueries.GET_USER_BY_EMAIL
 
     const email = req.body.email
 
     const result = await pool.query(selectUserByEmailQuery, [email])
 
     if (result.rows.length === 0) {
-      return res.status(404).json({"message": "User with this email does not exist"})
+      return res.status(404).json({"error": "User with this email does not exist"})
     }
 
+    // res.status(200).json(result.rows) // test for duplciate users
     res.status(200).json(result.rows[0])
 
   } catch (err) {

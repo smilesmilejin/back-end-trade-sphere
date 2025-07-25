@@ -1,7 +1,7 @@
 
 // https://expressjs.com/en/guide/error-handling.html
-
 const { pool } = require('../db/index');
+const userQueries = require('../db/queries/users');
 
 const validateModelById = async (modelName, modelId) => {
     // **
@@ -135,10 +135,31 @@ const validateModelRequiredFields = async(modelName, requestBody) => {
 
 };
 
+
+const checkEmailExistsInUserProfile = async(email) => {
+    /**
+     * Checks if the email already exists in the user_profile table.
+     * Throws error if found, otherwise returns silently.
+     *
+     * @param {string} email - The email to check for uniqueness.
+     * @throws {error}
+     */
+  const result = await pool.query(userQueries.GET_USER_BY_EMAIL, [email]);
+  if (result.rows.length > 0) {
+    // throw new EmailExistsError(`Email "${email}" is already registered.`);
+    const message = `Email "${email}" is already registered`;
+    const error = new Error(message);
+    error.statusCode = 400;
+    throw error;
+  }
+
+}
+
 // module.exports = validateModelRequiredFields;
 
 
 module.exports = {
   validateModelById,
   validateModelRequiredFields,
+  checkEmailExistsInUserProfile,
 };
