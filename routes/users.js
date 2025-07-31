@@ -419,7 +419,7 @@ router.get('/:userId/favorites', async(req, res) => {
     //   JOIN listing l ON l.listing_id = u.listing_id
     //   WHERE u.user_id = $1
     // `
-    const getUsersFavoriteListingsQuery = favoriteQueries.GET_USER_FAVORITE_LISTINGS
+    const getUsersFavoriteListingsQuery = favoriteQueries.GET_USER_FAVORITE_LISTINGS_WITH_IMAGES
 
     const result = await pool.query(getUsersFavoriteListingsQuery, [userId])
 

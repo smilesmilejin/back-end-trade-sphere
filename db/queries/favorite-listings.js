@@ -1,11 +1,25 @@
 module.exports = {
-  GET_USER_FAVORITE_LISTINGS: `
-    SELECT 
-      u.user_id, 
-      l.*
+  // GET_USER_FAVORITE_LISTINGS: `
+  //   SELECT 
+  //     u.user_id, 
+  //     l.*
+  //   FROM user_favorite_listing u
+  //   JOIN listing l ON l.listing_id = u.listing_id
+  //   WHERE u.user_id = $1;
+  // `,
+
+  GET_USER_FAVORITE_LISTINGS_WITH_IMAGES:`
+      SELECT 
+      l.*, 
+      COALESCE(
+        json_agg(i.*) FILTER (WHERE i.image_id IS NOT NULL),
+        '[]'
+      ) AS images
     FROM user_favorite_listing u
     JOIN listing l ON l.listing_id = u.listing_id
-    WHERE u.user_id = $1;
+    LEFT JOIN image i ON l.listing_id = i.listing_id
+    WHERE u.user_id = $1
+    GROUP BY l.listing_id;
   `,
 
   CREATE_USER_FAVORITE_LISTING: `
