@@ -76,4 +76,25 @@ module.exports = {
       WHERE listing_id = $1;
     `,
     
+    // Get listings with keyword search
+    GET_LISTINGS_AND_IMAGES_WITH_KEYWORD_SEARCH: `
+      SELECT 
+        l.*, 
+        COALESCE(
+          json_agg(i.*) FILTER (WHERE i.image_id IS NOT NULL),
+          '[]'
+        ) AS images
+      FROM listing l
+      LEFT JOIN image i ON l.listing_id = i.listing_id
+      WHERE 
+        (
+          l.name ILIKE '%' || $1 || '%'
+          OR l.category ILIKE '%' || $1 || '%'
+          OR l.description ILIKE '%' || $1 || '%'
+          OR l.location ILIKE '%' || $1 || '%'
+          OR l.contact_information ILIKE '%' || $1 || '%'
+        )
+
+      GROUP BY l.listing_id;
+    `,
 };
