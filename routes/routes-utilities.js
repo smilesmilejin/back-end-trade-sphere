@@ -35,6 +35,7 @@ const validateModelById = async (modelName, modelId) => {
         user_profile: 'user_id',
         listing: 'listing_id',
         // add other models here as needed
+        image:'image_id'
     };
 
     const idColumn = idColumns[modelName]; // Get the ID column name for the given modelName
