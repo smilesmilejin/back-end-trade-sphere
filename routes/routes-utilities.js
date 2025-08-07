@@ -64,42 +64,6 @@ const validateModelById = async (modelName, modelId) => {
 
 }
 
-// module.exports = validateModelById;
-
-
-// Sample result object structure:
-// [
-
-// {
-//     user_id: 1,
-//     email: 'john.doe@example.com',
-//     name: 'John Doe',
-//     address: '123 Main St, Springfield',
-//     created_at: 2025-07-22T01:27:39.041Z,
-//     updated_at: 2025-07-22T01:27:39.041Z
-// }
-// ]
-
-
-// > Number('123')
-// 123
-// > Number('abc')
-// NaN
-// > 
-// > Number('123.12')
-// 123.12
-// > 
-
-//   const requestBody = req.body;
-//   const requiredFields = ['email'];
-
-//   const missingFields = validateRequestBodyHasRequiredFields(requestBody, requiredFields);
-
-//   if (missingFields.length > 0) {
-//     return res.status(400).json({
-//       error: `Missing required field(s): ${missingFields.join(', ')}`
-//     });
-//   }
 
 const validateModelRequiredFields = async(modelName, requestBody) => {
     // /**
@@ -155,8 +119,6 @@ const checkEmailExistsInUserProfile = async(email) => {
   }
 
 }
-
-// module.exports = validateModelRequiredFields;
 
 
 module.exports = {

@@ -8,11 +8,6 @@ const listingQueries = require('../db/queries/listings');
 const imageQueries = require('../db/queries/images');
 const favoriteQueries = require('../db/queries/favorite-listings');
 
-// Example
-/* GET users listing. */
-// router.get('/', function(req, res, next) {
-//   res.send('respond with a resource');
-// });
 
 // GET /users
 // Retrieve all user profiles
@@ -37,31 +32,12 @@ router.post('/', async (req, res) => {
 
   const requestBody = req.body // this gets the request_body from the user
 
-  // // validate if all required fields in user_profile are included in the req.body
-  // const requiredFields = ['email'];
-
-  // const missingFields = requiredFields.filter(field =>
-  // requestBody[field] === undefined || requestBody[field] === null
-  // );
-
-  // if (missingFields.length > 0) {
-  //   return res.status(400).json({
-  //     details: `Missing required field(s): ${missingFields.join(', ')}`
-  //   });
-  // };
-
   try {
     await validateModelRequiredFields('user_profile', requestBody);
     
     // if email is already registered, the function will throw an error
     const email = req.body.email;
     await checkEmailExistsInUserProfile(email);
-
-    // const insertQuery = `
-    //   INSERT INTO user_profile (email, name, address, created_at, updated_at)
-    //   VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-    //   RETURNING *;
-    // `;
 
     const insertQuery = userQueries.CREATE_USER;
     const values = [
@@ -105,18 +81,6 @@ router.patch('/:userId', async (req, res) => {
     await validateModelById('user_profile', req.params.userId);
     await validateModelRequiredFields('user_profile', requestBody)
 
-
-    // const UpdateQuery = `
-    //   UPDATE user_profile
-    //   SET
-    //     email = $1,
-    //     name = $2,
-    //     address = $3,
-    //     updated_at = CURRENT_TIMESTAMP
-    //   WHERE user_id = $4
-    //   RETURNING *;
-    // `;
-
     const UpdateQuery = userQueries.UPDATE_USER
     const values = [
       requestBody.email,
@@ -141,23 +105,6 @@ router.get('/:userId/listings', async (req, res) => {
   const useId = req.params.userId;
   try {
     await validateModelById('user_profile', useId);
-
-    // const getUserListingsAndImagesQuery = `
-    //   SELECT 
-    //     l.*,
-    //     COALESCE(
-    //     json_agg(i.*) FILTER (WHERE i.image_id IS NOT NULL),
-    //     '[]'
-    //   ) AS images
-    //   FROM listing l
-    //   LEFT JOIN image i ON l.listing_id = i.listing_id
-    //   WHERE l.user_id = $1
-    //   GROUP BY l.listing_id;
-    // `;
-  
-    // const values = [useId];
-
-    // const result = await pool.query(getUserListingsAndImagesQuery, values)
 
     const query = userQueries.GET_LISTINGS_WITH_IMAGES_BY_USER_ID
     const values = [useId];
@@ -188,12 +135,6 @@ router.post('/:userId/listings', async(req, res) => {
 
     const requestBody = req.body
 
-    // const insertQuery = `
-    // INSERT INTO listing (user_id, name, category, description, price, location, contact_information, created_at, updated_at, sold_status)
-    // VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $8)
-    // RETURNING *
-    // `
-
     const createListingQuery = listingQueries.CREATE_LISTING
 
     const values = [
@@ -217,11 +158,6 @@ router.post('/:userId/listings', async(req, res) => {
 
     if (images.length > 0) {
       for (let img_url of images) {
-        // const insertImageQuery = `
-        // INSERT INTO image (listing_id, image_url)
-        // VALUES ($1, $2)
-        // `
-
         const insertListingImageQuery = imageQueries.CREATE_LISTING_IMAGE
         const imgValues = [
           curListingId,
@@ -234,21 +170,6 @@ router.post('/:userId/listings', async(req, res) => {
     }
 
     await client.query('COMMIT');      // ← Commit if everything is OK
-
-    // const getUserListingsAndImagesQuery = `
-    //   SELECT 
-    //     l.*,
-    //     COALESCE(
-    //     json_agg(i.*) FILTER (WHERE i.image_id IS NOT NULL),
-    //     '[]'
-    //   ) AS images
-    //   FROM listing l
-    //   LEFT JOIN image i ON l.listing_id = i.listing_id
-    //   WHERE l.listing_id = $1
-    //   GROUP BY l.listing_id;
-    // `;
-
-    // const finalResult = await client.query(getUserListingsAndImagesQuery, [curListingId]);
 
     const query = listingQueries.GET_LISTING_WITH_IMAGES_BY_ID
     const finalResult = await client.query(query, [curListingId]);
@@ -280,21 +201,6 @@ router.patch('/:userId/listings/:listingId', async(req, res) => {
 
     await client.query('BEGIN')
 
-    // update listing
-    // const updateListingQuery = `
-    //   UPDATE listing 
-    //   SET 
-    //     name = $1,
-    //     category = $2,
-    //     description = $3,
-    //     price = $4,
-    //     location = $5,
-    //     contact_information = $6,
-    //     updated_at = CURRENT_TIMESTAMP,
-    //     sold_status = $7
-    //   WHERE listing_id = $8 AND user_id = $9
-    //   RETURNING *
-    //   `
     const updateListingQuery = listingQueries.UPDATE_LISTING;
 
     const listingValues = [
@@ -312,12 +218,6 @@ router.patch('/:userId/listings/:listingId', async(req, res) => {
     const updatedListingresult = await client.query(updateListingQuery, listingValues);
     const updatedListing = updatedListingresult.rows[0];
 
-    // delete all existing images of listing_id
-    // const deleteImagesByListingIdQuery = `
-    //   DELETE FROM image
-    //   WHERE listing_id = $1;
-    // `
-
     const deleteImagesByListingIdQuery = imageQueries.DELETE_IMAGES_BY_LISTING_ID
 
     // const deletedImages = await client.query(deleteImagesByListingIdQuery, [listingId]);
@@ -329,10 +229,6 @@ router.patch('/:userId/listings/:listingId', async(req, res) => {
 
     if (images.length > 0) {
       for (let img_url of images) {
-        // const insertImageQuery = `
-        // INSERT INTO image (listing_id, image_url)
-        // VALUES ($1, $2)
-        // `
         const insertImageQuery = imageQueries.CREATE_LISTING_IMAGE
 
         const imgValues = [
@@ -346,16 +242,6 @@ router.patch('/:userId/listings/:listingId', async(req, res) => {
     }
 
     await client.query('COMMIT')
-
-  // const getUpdatedListingWithImagesQuery = `
-  //   SELECT 
-  //     l.*,
-  //     COALESCE(json_agg(i.*) FILTER (WHERE i.image_id IS NOT NULL), '[]') AS images
-  //   FROM listing l
-  //   LEFT JOIN image i ON l.listing_id = i.listing_id
-  //   WHERE l.listing_id = $1
-  //   GROUP BY l.listing_id;
-  // `;
 
   const getUpdatedListingWithImagesQuery = listingQueries.GET_LISTING_WITH_IMAGES_BY_ID
   const finalResult = await client.query(getUpdatedListingWithImagesQuery, [listingId]);
@@ -381,19 +267,8 @@ router.delete('/:userId/listings/:listingId', async(req, res) => {
     // await validateModelById('user_profile', userId);
     await validateModelById('listing', listingId);
 
-    // DELETE listing will also delete images associated with that listing
-    // const deleteSpecificListingQuery = `
-    //   DELETE FROM listing
-    //   WHERE listing_id = $1
-    // `
-
     const deleteSpecificListingQuery = listingQueries.DELETE_LISTING_BY_ID
     await pool.query(deleteSpecificListingQuery, [listingId])
-
-    // res.status(204) /// this does not provide response:
-    // User one of the following:
-    // res.sendStatus(204);
-    // res.status(204).send();
 
     res.status(204).send(); // No content
 
@@ -411,14 +286,6 @@ router.get('/:userId/favorites', async(req, res) => {
 
     await validateModelById('user_profile', userId)
 
-    // const getUsersFavoriteListingsQuery = `
-    //   SELECT 
-    //     u.user_id, 
-    //     l.*
-    //   FROM user_favorite_listing u
-    //   JOIN listing l ON l.listing_id = u.listing_id
-    //   WHERE u.user_id = $1
-    // `
     const getUsersFavoriteListingsQuery = favoriteQueries.GET_USER_FAVORITE_LISTINGS_WITH_IMAGES
 
     const result = await pool.query(getUsersFavoriteListingsQuery, [userId])
@@ -440,23 +307,9 @@ router.post('/:userId/favorites/:listingId', async(req, res) => {
     await validateModelById('user_profile', userId);
     await validateModelById('listing', listingId);
 
-    // const insertUserFavoriteQuery = `
-    //   INSERT INTO user_favorite_listing (user_id, listing_id, created_at)
-    //   VALUES ($1, $2, CURRENT_TIMESTAMP)
-    //   RETURNING *;
-    // `;
-
     const insertUserFavoriteQuery = favoriteQueries.CREATE_USER_FAVORITE_LISTING
 
-    // await pool.query(insertUserFavoriteQuery, [userId, listingId])
-
     const result = await pool.query(insertUserFavoriteQuery, [userId, listingId])
-
-    // const selectInsertedUserFavoriteQuery = `
-    //   SELECT * FROM user_favorite_listing 
-    //   WHERE user_id = $1 AND listing_id = $2
-    // `
-    // const result = await pool.query (selectInsertedUserFavoriteQuery, [userId, listingId])
 
     res.status(201).json(result.rows)
 
@@ -474,12 +327,6 @@ router.delete('/:userId/favorites/:listingId', async(req, res) => {
   try {
     await validateModelById('user_profile', userId);
     await validateModelById('listing', listingId);
-    // Varify if userid and listingid is a valid combination
-    // const deleteUserFavoriteQuery = `
-    //   DELETE FROM user_favorite_listing
-    //   WHERE user_id = $1 AND listing_id = $2
-    //   RETURNING *;
-    // `;
 
     const deleteUserFavoriteQuery = favoriteQueries.DELETE_USER_FAVORITE_LISTING;
     const result = await pool.query(deleteUserFavoriteQuery, [userId, listingId])
@@ -506,11 +353,6 @@ router.post('/login', async(req, res) => {
   try {
     await validateModelRequiredFields('user_profile', requestBody)
 
-    // const selectUserByEmailQuery = `
-    //   SELECT * FROM user_profile
-    //   WHERE email = $1;
-    // `;
-
     const selectUserByEmailQuery = userQueries.GET_USER_BY_EMAIL
 
     const email = req.body.email
@@ -521,7 +363,6 @@ router.post('/login', async(req, res) => {
       return res.status(404).json({"error": "User with this email does not exist"})
     }
 
-    // res.status(200).json(result.rows) // test for duplciate users
     res.status(200).json(result.rows[0])
 
   } catch (err) {
