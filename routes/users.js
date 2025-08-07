@@ -13,7 +13,6 @@ const favoriteQueries = require('../db/queries/favorite-listings');
 // Retrieve all user profiles
 router.get('/', async (req, res) => {
   try {
-    // const query = `SELECT * FROM user_profile`;
     const query = userQueries.GET_ALL_USERS; // Use the pre-defined SQL query to get all users
     const result = await pool.query(query); // Execute the query to get all users from the user_profile table
 
@@ -49,7 +48,6 @@ router.post('/', async (req, res) => {
     const result = await pool.query(insertQuery, values);
     const newUser = result.rows[0];
 
-    // console.log(newUser)
 
     res.status(201).json(newUser);
 
@@ -92,7 +90,6 @@ router.patch('/:userId', async (req, res) => {
     const result = await pool.query(UpdateQuery, values);
     const updatedUser = result.rows[0];
 
-    // console.log(updatedUser)
     res.status(200).json(updatedUser);
   } catch (err) {
     res.status(err.statusCode || 500).json({ error: err.message || 'Internal server error'});
@@ -120,10 +117,6 @@ router.get('/:userId/listings', async (req, res) => {
 
 // POST users/<user_id>/listings
 // To ensure that inserting into two tables (listing, image) happens as a single atomic operation — meaning both succeed or neither happens — you need to wrap them in a PostgreSQL transaction.
-// Need to add images urls
-// Add a litings with both update image table and listing table at the same time
-// image might have muptiples
-// https://node-postgres.com/features/transactions?utm_source=chatgpt.com
 router.post('/:userId/listings', async(req, res) => {
   const userId = req.params.userId;
   const client = await pool.connect() // The client object obtained via const client = await pool.connect(); in node-postgres (pg package) gives you direct access to transaction control methods.
@@ -148,7 +141,6 @@ router.post('/:userId/listings', async(req, res) => {
       requestBody.sold_status || false,
     ]
 
-    // const insertListingresult = await client.query(insertQuery, values)
     const insertListingresult = await client.query(createListingQuery, values)
 
     // GET listing_id from result
@@ -164,7 +156,6 @@ router.post('/:userId/listings', async(req, res) => {
           img_url,
         ];
 
-        // await client.query(insertImageQuery, imgValues)
         await client.query(insertListingImageQuery, imgValues)
       }
     }
@@ -178,7 +169,7 @@ router.post('/:userId/listings', async(req, res) => {
 
   } catch(err) {
     await client.query('ROLLBACK');  // ← Rollback on failure
-    // throw err; 
+
     console.error('Transaction error:', err);
     res.status(err.statusCode || 500).json({ error: err.message || 'Internal server error'}); // Send error response here instead of throwing
 
