@@ -1,6 +1,5 @@
 const { pool } = require('./index');
 
-
 async function getUsersId(modelName, modelId) {
   try {
     const query = `SELECT * FROM ${modelName} WHERE user_id = ${modelId}`
