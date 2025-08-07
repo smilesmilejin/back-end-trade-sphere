@@ -1,5 +1,3 @@
-
-
 module.exports = {
   GET_ALL_USERS: `SELECT * FROM user_profile`,
   // test sql error handling
