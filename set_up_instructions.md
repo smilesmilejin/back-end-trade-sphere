@@ -926,3 +926,31 @@ trade_sphere_test=# SELECT * FROM pgmigrations;
 
 trade_sphere_test=# 
 ```
+
+Add this to package.json
+```
+"test": "NODE_ENV=test jest",
+```
+
+Change the database connection string in index.js based on text mode
+
+when run `npm test` it will run on test database then
+
+```
+const isTest = process.env.NODE_ENV === 'test';
+
+// Select connection string based on environment
+const connectionString = isTest
+  ? process.env.TEST_DATABASE_URL
+  : process.env.DATABASE_URL;
+
+// Only use SSL options if NOT testing
+const sslOptions = !isTest
+  ? {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false, // Accept Render's certs (safe for development)
+      },
+    }
+  : {};
+```
