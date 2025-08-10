@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "migrate": "node-pg-migrate"
+    "migrate": "node-pg-migrate",
+    "migrate:test": "node-pg-migrate up --database-url-var TEST_DATABASE_URL",
+    "test": "jest"
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",
