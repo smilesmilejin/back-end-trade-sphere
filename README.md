@@ -33,7 +33,9 @@ This project uses the following dependencies:
 - **morgan** — HTTP request logger  
 
 ### Development Dependencies
-- **node-pg-migrate** — Database migration tool for PostgreSQL  
+- **jest** — JavaScript testing framework used for writing and running unit tests
+- **node-pg-migrate** — Database migration tool for PostgreSQL
+- **supertest** — HTTP assertion library for testing Node.js HTTP servers
 
 
 ## One-time Project Setup - Back-End Layer
@@ -145,3 +147,50 @@ Start the development server. The app will be available at http://localhost:3000
 $ npm start
 ```
 
+### Run the Test
+
+
+#### 1. Create a Local PostgreSQL Database
+
+Start the PostgreSQL interactive terminal:
+
+```bash
+psql -U postgres
+```
+
+Create the test database:
+
+```
+CREATE DATABASE trade_sphere_test;
+```
+This will create and connect you to a database named trade_sphere_test.
+
+#### 2. Create a .env.test File in the Root Folder and Add Test Database Configuration
+In the root directory of your backend project, create a .env.test file to store test environment variables. Add the following content, replacing the values as needed:
+
+```
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/trade_sphere_test
+PORT=3001
+NODE_ENV=test
+```
+
+This .env.test file will be used during testing to configure the database connection and environment settings.
+
+#### 3. Run Migrations on the Test Database
+
+Add the following environment variable to your `.env`:
+
+```
+TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/trade_sphere_test
+```
+
+Apply the database migrations to the test database using the following command:
+```
+npm run migrate:test
+```
+
+#### 4. Run the Tests
+Execute the test suite with:
+```
+npm test
+```
